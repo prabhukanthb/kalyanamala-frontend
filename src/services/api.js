@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'kalyanamala-backend-production.up.railway.app.api';
+const API_BASE_URL = 'https://kalyanamala-backend-production.up.railway.app/api';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
