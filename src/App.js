@@ -1,14 +1,9 @@
 import React, { useContext } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
-
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated } = useContext(AuthContext);
-  return isAuthenticated ? children : <Navigate to="/login" />;
-};
 
 const NavBar = () => {
   const { isAuthenticated, logout, user } = useContext(AuthContext);
@@ -29,7 +24,7 @@ const NavBar = () => {
         {isAuthenticated ? (
           <>
             <span style={{ marginRight: '20px' }}>Hi, {user?.firstName}!</span>
-            <button 
+            <button
               onClick={logout}
               style={{
                 padding: '8px 15px',
