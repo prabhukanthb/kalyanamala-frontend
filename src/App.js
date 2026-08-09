@@ -53,6 +53,9 @@ const NavBar = () => {
   );
 };
 
+<Route path="/profile" element={<div>Profile page coming soon</div>} />
+
+
 function AppContent() {
   return (
     <div>
