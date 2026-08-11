@@ -5,27 +5,21 @@ import { AuthProvider, AuthContext } from './context/AuthContext';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
-<Route path="/profile" element={<Profile />} />
-
+import Profile from './pages/Profile';
 
 const NavBar = () => {
   const { isAuthenticated, logout, user } = useContext(AuthContext);
 
   return (
-    <nav
-      style={{
-        backgroundColor: '#333',
-        color: 'white',
-        padding: '15px 20px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}
-    >
-      <Link
-        to="/"
-        style={{ color: 'white', textDecoration: 'none', fontSize: '20px', fontWeight: 'bold' }}
-      >
+    <nav style={{
+      backgroundColor: '#333',
+      color: 'white',
+      padding: '15px 20px',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center'
+    }}>
+      <Link to="/" style={{ color: 'white', textDecoration: 'none', fontSize: '20px', fontWeight: 'bold' }}>
         💍 Kalyanamala
       </Link>
 
@@ -33,11 +27,8 @@ const NavBar = () => {
         {isAuthenticated ? (
           <>
             <span style={{ marginRight: '20px' }}>Hi, {user?.firstName}!</span>
-            <Link
-              to="/profile"
-              style={{ color: 'white', marginRight: '15px', textDecoration: 'none' }}
-            >
-              Profile
+            <Link to="/profile" style={{ color: 'white', marginRight: '15px', textDecoration: 'none' }}>
+              My Profile
             </Link>
             <button
               onClick={logout}
@@ -55,10 +46,7 @@ const NavBar = () => {
           </>
         ) : (
           <>
-            <Link
-              to="/login"
-              style={{ color: 'white', marginRight: '15px', textDecoration: 'none' }}
-            >
+            <Link to="/login" style={{ color: 'white', marginRight: '15px', textDecoration: 'none' }}>
               Login
             </Link>
             <Link to="/register" style={{ color: 'white', textDecoration: 'none' }}>
@@ -85,7 +73,7 @@ function AppContent() {
   );
 }
 
-function App() {
+export default function App() {
   return (
     <AuthProvider>
       <Router>
@@ -94,5 +82,3 @@ function App() {
     </AuthProvider>
   );
 }
-
-export default App;
