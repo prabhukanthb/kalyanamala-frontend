@@ -20,7 +20,7 @@ const Login = () => {
       await login(emailOrPhone, password);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.error?.message || 'Login failed');
+      setError(err.response?.data?.message || err.response?.data?.error || 'Login failed');
     } finally {
       setLoading(false);
     }
