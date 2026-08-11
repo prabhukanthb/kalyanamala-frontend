@@ -5,7 +5,8 @@ import { AuthProvider, AuthContext } from './context/AuthContext';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Profile from './pages/Profile';
+<Route path="/profile" element={<Profile />} />
+
 
 const NavBar = () => {
   const { isAuthenticated, logout, user } = useContext(AuthContext);
