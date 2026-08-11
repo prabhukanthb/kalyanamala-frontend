@@ -39,7 +39,7 @@ const Register = () => {
       await register(formData);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.error?.message || 'Registration failed');
+     setError(err.response?.data?.message || err.response?.data?.error || 'Registration failed');
     } finally {
       setLoading(false);
     }
