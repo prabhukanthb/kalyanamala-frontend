@@ -7,7 +7,7 @@ const Login = () => {
   const [password,setPassword] = useState('');
   const [error,setError] = useState('');
   const [loading,setLoading] = useState(false);
-  
+
   const navigate = useNavigate();
   const { login } = useContext(AuthContext);
 
@@ -15,10 +15,9 @@ const Login = () => {
     e.preventDefault();
     setError('');
     setLoading(true);
-
     try {
       await login(emailOrPhone, password);
-      navigate('/');
+      navigate('/profile');
     } catch (err) {
       setError(err.response?.data?.message || err.response?.data?.error || 'Login failed');
     } finally {
@@ -27,60 +26,27 @@ const Login = () => {
   };
 
   return (
-    <div style={{ maxWidth: '400px', margin: '50px auto', padding: '20px', border: '1px solid #ddd', borderRadius: '5px' }}>
+    <div style={box}>
       <h2>Login</h2>
-      
-      {error && <div style={{ color: 'red', marginBottom: '10px', padding: '10px', backgroundColor: '#ffebee', borderRadius: '5px' }}>{error}</div>}
-      
+      {error && <div style={errorBox}>{error}</div>}
       <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px' }}>Email or Phone:</label>
-          <input
-            type="text"
-            value={emailOrPhone}
-            onChange={(e) => setEmailOrPhone(e.target.value)}
-            required
-            style={{ width: '100%', padding: '8px', boxSizing: 'border-box', border: '1px solid #ddd', borderRadius: '5px' }}
-          />
-        </div>
+        <label>Email or Phone</label>
+        <input style={input} value={emailOrPhone} onChange={e => setEmailOrPhone(e.target.value)} />
 
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px' }}>Password:</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={{ width: '100%', padding: '8px', boxSizing: 'border-box', border: '1px solid #ddd', borderRadius: '5px' }}
-          />
-        </div>
+        <label>Password</label>
+        <input style={input} type="password" value={password} onChange={e => setPassword(e.target.value)} />
 
-        <button
-          type="submit"
-          disabled={loading}
-          style={{
-            width: '100%',
-            padding: '10px',
-            backgroundColor: '#2196F3',
-            color: 'white',
-            border: 'none',
-            cursor: 'pointer',
-            borderRadius: '5px',
-            fontSize: '16px'
-          }}
-        >
-          {loading ? 'Logging in...' : 'Login'}
-        </button>
+        <button style={button} disabled={loading}>{loading ? 'Logging in...' : 'Login'}</button>
       </form>
-
-      <p style={{ textAlign: 'center', marginTop: '20px' }}>
-        Don't have an account?{' '}
-        <span onClick={() => navigate('/register')} style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }}>
-          Register here
-        </span>
-      </p>
+      <p onClick={() => navigate('/register')} style={linkStyle}>Register here</p>
     </div>
   );
 };
+
+const box = { maxWidth: '420px', margin: '50px auto', padding: '20px', border: '1px solid #ddd', borderRadius: '8px' };
+const input = { width: '100%', padding: '10px', margin: '8px 0 15px 0', boxSizing: 'border-box' };
+const button = { width: '100%', padding: '10px', backgroundColor: '#2196F3', color: 'white', border: 'none', borderRadius: '5px' };
+const errorBox = { color: 'red', marginBottom: '10px' };
+const linkStyle = { cursor: 'pointer', color: 'blue', textDecoration: 'underline' };
 
 export default Login;
