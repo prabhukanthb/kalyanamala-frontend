@@ -82,13 +82,12 @@ function calculateAge(dob) {
 
 const Profile = () => {
   const { token, user } = useContext(AuthContext);
+
   const [loading,setLoading] = useState(true);
   const [saving,setSaving] = useState(false);
   const [error,setError] = useState('');
   const [profile,setProfile] = useState(null);
   const [form,setForm] = useState(initialForm);
-  const [photoFiles,setPhotoFiles] = useState([]);
-  const [photoPreviews,setPhotoPreviews] = useState([]);
 
   const age = useMemo(() => calculateAge(form.dateOfBirth), [form.dateOfBirth]);
 
@@ -136,21 +135,24 @@ const Profile = () => {
           aboutMe: p.aboutMe || '',
           preferredMatch: p.preferredMatch || 'any_religion'
         });
-
-        setPhotoPreviews((p.photos || []).map((photo) => photo.url));
       } catch (err) {
         if (err.response?.status === 404) {
           setProfile(null);
         } else {
-          setError(err.response?.data?.message || err.response?.data?.error || 'Failed to load profile');
+          setError(
+            err.response?.data?.message ||
+            err.response?.data?.error ||
+            'Failed to load profile'
+          );
         }
       } finally {
         setLoading(false);
       }
     };
 
-    if (token) loadProfile();
-    else {
+    if (token) {
+      loadProfile();
+    } else {
       setLoading(false);
       setError('Please login again.');
     }
@@ -158,40 +160,10 @@ const Profile = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handlePhotoChange = (e) => {
-    const files = Array.from(e.target.files || []);
-    const allowed = ['image/jpeg','image/jpg','image/png','image/webp'];
-
-    const valid = files.filter((file) => allowed.includes(file.type));
-    if (valid.length !== files.length) {
-      setError('Only JPG, PNG, and WEBP images are allowed.');
-      return;
-    }
-
-    if (valid.length > 3) {
-      setError('Maximum 3 photos allowed.');
-      return;
-    }
-
-    const total = photoFiles.length + valid.length;
-    if (total > 3) {
-      setError('You can upload only up to 3 photos.');
-      return;
-    }
-
-    const merged = [...photoFiles,...valid].slice(0, 3);
-    setPhotoFiles(merged);
-    setPhotoPreviews(merged.map((file) => URL.createObjectURL(file)));
-  };
-
-  const removePhoto = (index) => {
-    const updatedFiles = [...photoFiles];
-    updatedFiles.splice(index, 1);
-    setPhotoFiles(updatedFiles);
-    setPhotoPreviews(updatedFiles.map((file) => URL.createObjectURL(file)));
+    setForm((prev) => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -203,83 +175,88 @@ const Profile = () => {
       return;
     }
 
-    const formData = new FormData();
-
-    formData.append('fullName', form.fullName);
-    formData.append('gender', form.gender);
-    formData.append('dateOfBirth', form.dateOfBirth);
-    formData.append('heightFeet', form.heightFeet);
-    formData.append('heightInches', form.heightInches);
-    formData.append('religion', form.religion);
-    formData.append('subCaste', form.subCaste);
-    formData.append('siblingsCount', form.siblingsCount);
-    formData.append('maritalStatus', form.maritalStatus);
-    formData.append('haveChildren', form.haveChildren === 'Yes' ? 'true' : 'false');
-    formData.append('familyStatus', form.familyStatus);
-    formData.append('familyValues', form.familyValues);
-    formData.append('fatherName', form.fatherName);
-    formData.append('fatherOccupation', form.fatherOccupation);
-    formData.append('motherName', form.motherName);
-    formData.append('motherOccupation', form.motherOccupation);
-    formData.append('highestEducation', form.highestEducation);
-    formData.append('fieldOfStudy', form.fieldOfStudy);
-    formData.append('college', form.college);
-    formData.append('occupation', form.occupation);
-    formData.append('employmentType', form.employmentType);
-    formData.append('companyName', form.companyName);
-    formData.append('jobTitle', form.jobTitle);
-    formData.append('jobLocation', form.jobLocation);
-    formData.append('industry', form.industry);
-    formData.append('income', form.income);
-    formData.append('incomeCurrency', 'INR');
-    formData.append('currentAddress[country]', form.country);
-    formData.append('currentAddress[state]', form.state);
-    formData.append('currentAddress[city]', form.city);
-    formData.append('aboutMe', form.aboutMe);
-    formData.append('preferredMatch', form.preferredMatch);
-    formData.append('caste', 'Mala');
-
-    photoFiles.forEach((file) => {
-      formData.append('photos', file);
-    });
+    const payload = {
+      fullName: form.fullName,
+      gender: form.gender,
+      dateOfBirth: form.dateOfBirth,
+      heightFeet: Number(form.heightFeet),
+      heightInches: Number(form.heightInches),
+      religion: form.religion,
+      subCaste: form.subCaste,
+      siblingsCount: Number(form.siblingsCount || 0),
+      maritalStatus: form.maritalStatus,
+      haveChildren: form.haveChildren === 'Yes',
+      familyStatus: form.familyStatus || null,
+      familyValues: form.familyValues || null,
+      fatherName: form.fatherName,
+      fatherOccupation: form.fatherOccupation,
+      motherName: form.motherName,
+      motherOccupation: form.motherOccupation,
+      highestEducation: form.highestEducation,
+      fieldOfStudy: form.fieldOfStudy,
+      college: form.college,
+      occupation: form.occupation,
+      employmentType: form.employmentType,
+      companyName: form.companyName,
+      jobTitle: form.jobTitle,
+      jobLocation: form.jobLocation,
+      industry: form.industry,
+      income: Number(form.income),
+      incomeCurrency: 'INR',
+      currentAddress: {
+        country: form.country,
+        state: form.state,
+        city: form.city
+      },
+      aboutMe: form.aboutMe,
+      preferredMatch: form.preferredMatch,
+      caste: 'Mala'
+    };
 
     setSaving(true);
 
     try {
       let res;
+
       if (profile) {
-        res = await axios.put(`${API_BASE}/api/profiles/me`, formData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
-          }
+        res = await axios.put(`${API_BASE}/api/profiles/me`, payload, {
+          headers: { Authorization: `Bearer ${token}` }
         });
       } else {
-        res = await axios.post(`${API_BASE}/api/profiles`, formData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
-          }
+        res = await axios.post(`${API_BASE}/api/profiles`, payload, {
+          headers: { Authorization: `Bearer ${token}` }
         });
       }
 
       setProfile(res.data.profile);
       alert(profile ? 'Profile updated successfully' : 'Profile created successfully');
     } catch (err) {
-      setError(err.response?.data?.message || err.response?.data?.error || 'Failed to save profile');
+      setError(
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        'Failed to save profile'
+      );
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) return <div style={{ padding: '40px' }}>Loading profile...</div>;
+  if (loading) {
+    return <div style={{ padding: '40px' }}>Loading profile...</div>;
+  }
 
   return (
     <div style={{ maxWidth: '950px', margin: '40px auto', padding: '20px' }}>
       <h2>My Profile</h2>
 
       {error && (
-        <div style={{ color: 'red', marginBottom: '15px', padding: '10px', background: '#ffebee', borderRadius: '6px' }}>
+        <div style={{
+          color: 'red',
+          marginBottom: '15px',
+          padding: '10px',
+          background: '#ffebee',
+          borderRadius: '6px'
+        }}>
           {error}
         </div>
       )}
@@ -358,10 +335,10 @@ const Profile = () => {
           <label>Marital status</label>
           <select name="maritalStatus" value={form.maritalStatus} onChange={handleChange} style={inputStyle} required>
             <option value="">Select</option>
-            <option value="Never married">Never married</option>
+            <option value="Nevermarried">Never married</option>
             <option value="Divorced">Divorced</option>
             <option value="Widowed">Widowed</option>
-            <option value="Awaiting Divorce">Awaiting Divorce</option>
+            <option value="AwaitingDivorce">Awaiting Divorce</option>
           </select>
 
           <label>Have Children</label>
@@ -451,43 +428,7 @@ const Profile = () => {
           <h3>About & Preference</h3>
 
           <label>Photos</label>
-          <input
-            type="file"
-            accept=".jpg,.jpeg,.png,.webp"
-            multiple
-            onChange={handlePhotoChange}
-            style={inputStyle}
-          />
-
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '14px' }}>
-            {photoPreviews.map((src, idx) => (
-              <div key={idx} style={{ position: 'relative' }}>
-                <img
-                  src={src}
-                  alt={`preview-${idx}`}
-                  style={{ width: '120px', height: '120px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ccc' }}
-                />
-                <button
-                  type="button"
-                  onClick={() => removePhoto(idx)}
-                  style={{
-                    position: 'absolute',
-                    top: '-8px',
-                    right: '-8px',
-                    border: 'none',
-                    borderRadius: '50%',
-                    width: '24px',
-                    height: '24px',
-                    background: '#e74c3c',
-                    color: '#fff',
-                    cursor: 'pointer'
-                  }}
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
+          <p>Photo upload is not wired in this version yet. This form will still save all other fields correctly.</p>
 
           <label>About Me</label>
           <textarea
