@@ -13,13 +13,16 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const loadUser = async () => {
       if (!token) return;
+
       try {
         const res = await axios.get(`${API_BASE}/api/auth/me`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         });
         setUser(res.data.user);
         setIsAuthenticated(true);
-      } catch {
+      } catch (error) {
         logout();
       }
     };
@@ -46,14 +49,6 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    try {
-      if (token) {
-        await axios.post(`${API_BASE}/api/auth/logout`, {}, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-      }
-    } catch {}
-
     localStorage.removeItem('token');
     setToken('');
     setUser(null);
