@@ -82,7 +82,6 @@ function calculateAge(dob) {
 
 const Profile = () => {
   const { token, user } = useContext(AuthContext);
-
   const [loading,setLoading] = useState(true);
   const [saving,setSaving] = useState(false);
   const [error,setError] = useState('');
@@ -95,9 +94,7 @@ const Profile = () => {
     const loadProfile = async () => {
       try {
         const res = await axios.get(`${API_BASE}/api/profiles/me`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+          headers: { Authorization: `Bearer ${token}` }
         });
 
         const p = res.data.profile;
@@ -107,8 +104,8 @@ const Profile = () => {
           fullName: p.fullName || '',
           gender: p.gender || '',
           dateOfBirth: p.dateOfBirth ? new Date(p.dateOfBirth).toISOString().split('T')[0] : '',
-          heightFeet: p.heightFeet || '',
-          heightInches: p.heightInches || '',
+          heightFeet: p.heightFeet?.toString() || '',
+          heightInches: p.heightInches?.toString() || '',
           religion: p.religion || '',
           subCaste: p.subCaste || '',
           siblingsCount: p.siblingsCount?.toString() || '',
@@ -148,9 +145,8 @@ const Profile = () => {
       }
     };
 
-    if (token) {
-      loadProfile();
-    } else {
+    if (token) loadProfile();
+    else {
       setLoading(false);
       setError('Please login again.');
     }
@@ -173,26 +169,19 @@ const Profile = () => {
       return;
     }
 
-    if (!form.heightFeet || !form.heightInches) {
-      setError('Please select height in feet and inches.');
-      return;
-    }
-
     const payload = {
       fullName: form.fullName,
       gender: form.gender,
       dateOfBirth: form.dateOfBirth,
-      heightFeet: form.heightFeet,
-      heightInches: form.heightInches,
-      heightCm: null,
-      caste: 'Mala',
-      subCaste: form.subCaste,
+      heightFeet: Number(form.heightFeet),
+      heightInches: Number(form.heightInches),
       religion: form.religion,
+      subCaste: form.subCaste,
+      siblingsCount: Number(form.siblingsCount || 0),
       maritalStatus: form.maritalStatus,
       haveChildren: form.haveChildren === 'Yes',
-      siblingsCount: Number(form.siblingsCount || 0),
-      familyStatus: form.familyStatus,
-      familyValues: form.familyValues,
+      familyStatus: form.familyStatus || null,
+      familyValues: form.familyValues || null,
       fatherName: form.fatherName,
       fatherOccupation: form.fatherOccupation,
       motherName: form.motherName,
@@ -207,33 +196,28 @@ const Profile = () => {
       jobLocation: form.jobLocation,
       industry: form.industry,
       income: Number(form.income),
-      incomeCurrency: form.incomeCurrency,
+      incomeCurrency: 'INR',
       currentAddress: {
-        location: `${form.city}, ${form.state}, ${form.country}`,
-        city: form.city,
+        country: form.country,
         state: form.state,
-        country: form.country
+        city: form.city
       },
       aboutMe: form.aboutMe,
-      preferredMatch: form.preferredMatch
+      preferredMatch: form.preferredMatch,
+      caste: 'Mala'
     };
 
     setSaving(true);
 
     try {
       let res;
-
       if (profile) {
         res = await axios.put(`${API_BASE}/api/profiles/me`, payload, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+          headers: { Authorization: `Bearer ${token}` }
         });
       } else {
         res = await axios.post(`${API_BASE}/api/profiles`, payload, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+          headers: { Authorization: `Bearer ${token}` }
         });
       }
 
@@ -246,9 +230,7 @@ const Profile = () => {
     }
   };
 
-  if (loading) {
-    return <div style={{ padding: '40px' }}>Loading profile...</div>;
-  }
+  if (loading) return <div style={{ padding: '40px' }}>Loading profile...</div>;
 
   return (
     <div style={{ maxWidth: '950px', margin: '40px auto', padding: '20px' }}>
@@ -371,7 +353,7 @@ const Profile = () => {
           <label>Highest Education</label>
           <input name="highestEducation" value={form.highestEducation} onChange={handleChange} style={inputStyle} required />
 
-          <label>Field of study / Specialization</label>
+          <label>Field of Study / Specialization</label>
           <input name="fieldOfStudy" value={form.fieldOfStudy} onChange={handleChange} style={inputStyle} required />
 
           <label>College</label>
@@ -380,7 +362,7 @@ const Profile = () => {
           <label>Occupation</label>
           <input name="occupation" value={form.occupation} onChange={handleChange} style={inputStyle} required />
 
-          <label>Employment type</label>
+          <label>Employment Type</label>
           <select name="employmentType" value={form.employmentType} onChange={handleChange} style={inputStyle} required>
             <option value="">Select</option>
             <option value="private">Private</option>
@@ -394,7 +376,7 @@ const Profile = () => {
           <label>Company Name</label>
           <input name="companyName" value={form.companyName} onChange={handleChange} style={inputStyle} required />
 
-          <label>Job title</label>
+          <label>Job Title</label>
           <input name="jobTitle" value={form.jobTitle} onChange={handleChange} style={inputStyle} required />
 
           <label>Job Location</label>
@@ -426,6 +408,9 @@ const Profile = () => {
         <div style={sectionStyle}>
           <h3>About & Preference</h3>
 
+          <label>Photos</label>
+          <p>Photo upload will be added as a separate step so we can enforce 3-photo limit and admin approval properly.</p>
+
           <label>About Me</label>
           <textarea
             name="aboutMe"
@@ -453,3 +438,4 @@ const Profile = () => {
 };
 
 export default Profile;
+``
