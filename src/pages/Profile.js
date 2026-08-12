@@ -517,13 +517,36 @@ const Profile = () => {
             <h3>Professional & Education</h3>
 
             <label>Highest Education</label>
-            <input
-              name="highestEducation"
-              value={form.highestEducation}
-              onChange={handleChange}
-              style={inputStyle}
-              required
-            />
+<select
+  name="highestEducation"
+  value={form.highestEducation}
+  onChange={handleChange}
+  style={inputStyle}
+  required
+>
+  <option value="">Select</option>
+  <option value="10th Pass">10th Pass</option>
+  <option value="12th Pass">12th Pass</option>
+  <option value="Diploma">Diploma</option>
+  <option value="ITI">ITI</option>
+  <option value="B.A">B.A</option>
+  <option value="B.Sc">B.Sc</option>
+  <option value="B.Com">B.Com</option>
+  <option value="B.Tech">B.Tech</option>
+  <option value="M.A">M.A</option>
+  <option value="M.Sc">M.Sc</option>
+  <option value="M.Com">M.Com</option>
+  <option value="M.Tech">M.Tech</option>
+  <option value="MBA">MBA</option>
+  <option value="MCA">MCA</option>
+  <option value="MBBS">MBBS</option>
+  <option value="BDS">BDS</option>
+  <option value="MD">MD</option>
+  <option value="MS">MS</option>
+  <option value="PhD">PhD</option>
+  <option value="Other">Other</option>
+</select>
+
 
             <label>Field of Study / Specialization</label>
             <input
@@ -572,24 +595,63 @@ const Profile = () => {
 
           <div style={sectionStyle}>
             <h3>Current Address</h3>
+<div style={sectionStyle}>
+  <h3>Current Address</h3>
 
-            <label>Street Name</label>
-            <input name="streetName" value={form.streetName} onChange={handleChange} style={inputStyle} required />
+  <label>Street Name</label>
+  <input
+    name="streetName"
+    value={form.streetName}
+    onChange={handleChange}
+    style={inputStyle}
+    required
+  />
 
-            <label>State</label>
-            <select name="state" value={form.state} onChange={handleChange} style={inputStyle} required>
-              <option value="">Select State</option>
-              {southIndianStates.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
+  <label>City</label>
+  <input
+    name="city"
+    value={form.city}
+    onChange={handleChange}
+    style={inputStyle}
+    required
+  />
 
-            <label>City</label>
-            <input name="city" value={form.city} onChange={handleChange} style={inputStyle} required />
+  <label>State</label>
+  <select
+    name="state"
+    value={form.state}
+    onChange={handleChange}
+    style={inputStyle}
+    required
+  >
+    <option value="">Select State</option>
+    <option value="Andhra Pradesh">Andhra Pradesh</option>
+    <option value="Telangana">Telangana</option>
+    <option value="Karnataka">Karnataka</option>
+    <option value="Tamil Nadu">Tamil Nadu</option>
+    <option value="Kerala">Kerala</option>
+    <option value="Puducherry">Puducherry</option>
+  </select>
 
-            <label>Country</label>
-            <input name="country" value={form.country} onChange={handleChange} style={inputStyle} required />
-          </div>
+  <label>Country</label>
+  <input
+    name="country"
+    value={form.country}
+    onChange={handleChange}
+    style={inputStyle}
+    required
+  />
+
+  <label>Pin Code</label>
+  <input
+    name="pinCode"
+    value={form.pinCode}
+    onChange={handleChange}
+    style={inputStyle}
+    required
+  />
+</div>
+
 
           <div style={sectionStyle}>
             <h3>About & Preference</h3>
