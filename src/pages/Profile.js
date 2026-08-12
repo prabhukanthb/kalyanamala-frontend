@@ -33,9 +33,10 @@ const initialForm = {
   income: '',
   incomeCurrency: 'INR',
   streetName: '',
-  state: '',
   city: '',
+  state: '',
   country: 'India',
+  pinCode: '',
   aboutMe: '',
   preferredMatch: 'any_religion'
 };
@@ -47,6 +48,42 @@ const southIndianStates = [
   'Tamil Nadu',
   'Kerala',
   'Puducherry'
+];
+
+const educationOptions = [
+  '10th Pass',
+  '12th Pass',
+  'Diploma',
+  'ITI',
+  'B.A',
+  'B.Sc',
+  'B.Com',
+  'B.Tech',
+  'M.A',
+  'M.Sc',
+  'M.Com',
+  'M.Tech',
+  'MBA',
+  'MCA',
+  'MBBS',
+  'BDS',
+  'MD',
+  'MS',
+  'PhD',
+  'Other'
+];
+
+const familyStatusOptions = [
+  'nuclear_family',
+  'joint_family',
+  'single_parent',
+  'extended_family'
+];
+
+const familyValuesOptions = [
+  'orthodox',
+  'moderate',
+  'liberal'
 ];
 
 const inputStyle = {
@@ -153,9 +190,10 @@ const Profile = () => {
           income: p.income?.toString() || '',
           incomeCurrency: p.incomeCurrency || 'INR',
           streetName: p.currentAddress?.streetName || '',
-          state: p.currentAddress?.state || '',
           city: p.currentAddress?.city || '',
+          state: p.currentAddress?.state || '',
           country: p.currentAddress?.country || 'India',
+          pinCode: p.currentAddress?.pinCode || '',
           aboutMe: p.aboutMe || '',
           preferredMatch: p.preferredMatch || 'any_religion'
         });
@@ -224,9 +262,10 @@ const Profile = () => {
       incomeCurrency: 'INR',
       currentAddress: {
         streetName: form.streetName,
-        state: form.state,
         city: form.city,
-        country: form.country
+        state: form.state,
+        country: form.country,
+        pinCode: form.pinCode
       },
       aboutMe: form.aboutMe,
       preferredMatch: form.preferredMatch,
@@ -237,6 +276,7 @@ const Profile = () => {
 
     try {
       let res;
+
       if (profile) {
         res = await axios.put(`${API_BASE}/api/profiles/me`, payload, {
           headers: { Authorization: `Bearer ${token}` }
@@ -249,6 +289,7 @@ const Profile = () => {
 
       setProfile(res.data.profile);
       setMode('view');
+      setError('');
     } catch (err) {
       setError(err.response?.data?.message || err.response?.data?.error || 'Failed to save profile');
     } finally {
@@ -256,7 +297,9 @@ const Profile = () => {
     }
   };
 
-  const handleBackHome = () => navigate('/');
+  const handleLogoutRedirectHome = () => {
+    navigate('/');
+  };
 
   if (loading) {
     return <div style={{ padding: '40px' }}>Loading profile...</div>;
@@ -299,6 +342,7 @@ const Profile = () => {
         >
           View Profile
         </button>
+
         <button
           type="button"
           onClick={() => setMode('edit')}
@@ -306,9 +350,10 @@ const Profile = () => {
         >
           Edit Profile
         </button>
+
         <button
           type="button"
-          onClick={handleBackHome}
+          onClick={handleLogoutRedirectHome}
           style={{ ...buttonStyle, backgroundColor: '#444', marginLeft: '10px' }}
         >
           Home
@@ -358,9 +403,10 @@ const Profile = () => {
           <div style={sectionStyle}>
             <h3>Current Address</h3>
             <p><strong>Street Name:</strong> {profile.currentAddress?.streetName || '-'}</p>
-            <p><strong>State:</strong> {profile.currentAddress?.state || '-'}</p>
             <p><strong>City:</strong> {profile.currentAddress?.city || '-'}</p>
+            <p><strong>State:</strong> {profile.currentAddress?.state || '-'}</p>
             <p><strong>Country:</strong> {profile.currentAddress?.country || '-'}</p>
+            <p><strong>Pin Code:</strong> {profile.currentAddress?.pinCode || '-'}</p>
           </div>
 
           <div style={sectionStyle}>
@@ -486,18 +532,17 @@ const Profile = () => {
             <label>Family Status</label>
             <select name="familyStatus" value={form.familyStatus} onChange={handleChange} style={inputStyle}>
               <option value="">Select</option>
-              <option value="nuclear_family">Nuclear Family</option>
-              <option value="joint_family">Joint Family</option>
-              <option value="single_parent">Single Parent</option>
-              <option value="extended_family">Extended Family</option>
+              {familyStatusOptions.map((v) => (
+                <option key={v} value={v}>{v}</option>
+              ))}
             </select>
 
             <label>Family Values</label>
             <select name="familyValues" value={form.familyValues} onChange={handleChange} style={inputStyle}>
               <option value="">Select</option>
-              <option value="orthodox">Orthodox</option>
-              <option value="moderate">Moderate</option>
-              <option value="liberal">Liberal</option>
+              {familyValuesOptions.map((v) => (
+                <option key={v} value={v}>{v}</option>
+              ))}
             </select>
 
             <label>Father’s Name</label>
@@ -517,45 +562,21 @@ const Profile = () => {
             <h3>Professional & Education</h3>
 
             <label>Highest Education</label>
-<select
-  name="highestEducation"
-  value={form.highestEducation}
-  onChange={handleChange}
-  style={inputStyle}
-  required
->
-  <option value="">Select</option>
-  <option value="10th Pass">10th Pass</option>
-  <option value="12th Pass">12th Pass</option>
-  <option value="Diploma">Diploma</option>
-  <option value="ITI">ITI</option>
-  <option value="B.A">B.A</option>
-  <option value="B.Sc">B.Sc</option>
-  <option value="B.Com">B.Com</option>
-  <option value="B.Tech">B.Tech</option>
-  <option value="M.A">M.A</option>
-  <option value="M.Sc">M.Sc</option>
-  <option value="M.Com">M.Com</option>
-  <option value="M.Tech">M.Tech</option>
-  <option value="MBA">MBA</option>
-  <option value="MCA">MCA</option>
-  <option value="MBBS">MBBS</option>
-  <option value="BDS">BDS</option>
-  <option value="MD">MD</option>
-  <option value="MS">MS</option>
-  <option value="PhD">PhD</option>
-  <option value="Other">Other</option>
-</select>
-
-
-            <label>Field of Study / Specialization</label>
-            <input
-              name="fieldOfStudy"
-              value={form.fieldOfStudy}
+            <select
+              name="highestEducation"
+              value={form.highestEducation}
               onChange={handleChange}
               style={inputStyle}
               required
-            />
+            >
+              <option value="">Select</option>
+              {educationOptions.map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+
+            <label>Field of Study / Specialization</label>
+            <input name="fieldOfStudy" value={form.fieldOfStudy} onChange={handleChange} style={inputStyle} required />
 
             <label>College</label>
             <input name="college" value={form.college} onChange={handleChange} style={inputStyle} required />
@@ -595,69 +616,63 @@ const Profile = () => {
 
           <div style={sectionStyle}>
             <h3>Current Address</h3>
-<div style={sectionStyle}>
-  <h3>Current Address</h3>
 
-  <label>Street Name</label>
-  <input
-    name="streetName"
-    value={form.streetName}
-    onChange={handleChange}
-    style={inputStyle}
-    required
-  />
+            <label>Street Name</label>
+            <input
+              name="streetName"
+              value={form.streetName}
+              onChange={handleChange}
+              style={inputStyle}
+              required
+            />
 
-  <label>City</label>
-  <input
-    name="city"
-    value={form.city}
-    onChange={handleChange}
-    style={inputStyle}
-    required
-  />
+            <label>City</label>
+            <input
+              name="city"
+              value={form.city}
+              onChange={handleChange}
+              style={inputStyle}
+              required
+            />
 
-  <label>State</label>
-  <select
-    name="state"
-    value={form.state}
-    onChange={handleChange}
-    style={inputStyle}
-    required
-  >
-    <option value="">Select State</option>
-    <option value="Andhra Pradesh">Andhra Pradesh</option>
-    <option value="Telangana">Telangana</option>
-    <option value="Karnataka">Karnataka</option>
-    <option value="Tamil Nadu">Tamil Nadu</option>
-    <option value="Kerala">Kerala</option>
-    <option value="Puducherry">Puducherry</option>
-  </select>
+            <label>State</label>
+            <select
+              name="state"
+              value={form.state}
+              onChange={handleChange}
+              style={inputStyle}
+              required
+            >
+              <option value="">Select State</option>
+              {southIndianStates.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
 
-  <label>Country</label>
-  <input
-    name="country"
-    value={form.country}
-    onChange={handleChange}
-    style={inputStyle}
-    required
-  />
+            <label>Country</label>
+            <input
+              name="country"
+              value={form.country}
+              onChange={handleChange}
+              style={inputStyle}
+              required
+            />
 
-  <label>Pin Code</label>
-  <input
-    name="pinCode"
-    value={form.pinCode}
-    onChange={handleChange}
-    style={inputStyle}
-    required
-  />
-</div>
-
+            <label>Pin Code</label>
+            <input
+              name="pinCode"
+              value={form.pinCode}
+              onChange={handleChange}
+              style={inputStyle}
+              required
+            />
+          </div>
 
           <div style={sectionStyle}>
             <h3>About & Preference</h3>
 
             <label>Photos</label>
-            <p>Photo upload will be added later so we can enforce max 3 photos and admin approval cleanly.</p>
+            <p>Photo upload will be added later.</p>
 
             <label>About Me</label>
             <textarea
