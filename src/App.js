@@ -1,11 +1,20 @@
 import React, { useContext } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useNavigate, Navigate } from 'react-router-dom';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Link,
+  useNavigate,
+  Navigate
+} from 'react-router-dom';
+
 import { AuthProvider, AuthContext } from './context/AuthContext';
 
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
+import AdminDashboard from './pages/AdminDashboard';
 
 const NavBar = () => {
   const { isAuthenticated, logout, user } = useContext(AuthContext);
@@ -49,6 +58,15 @@ const NavBar = () => {
               Profile
             </Link>
 
+            {(user?.role === 'admin' || user?.role === 'subadmin') && (
+              <Link
+                to="/admin"
+                style={{ color: 'white', marginRight: '15px', textDecoration: 'none' }}
+              >
+                Admin
+              </Link>
+            )}
+
             <button
               onClick={handleLogout}
               style={{
@@ -82,7 +100,7 @@ const NavBar = () => {
 };
 
 function AppContent() {
-  const { isAuthenticated } = useContext(AuthContext);
+  const { isAuthenticated, user } = useContext(AuthContext);
 
   return (
     <div>
@@ -91,7 +109,18 @@ function AppContent() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/login" replace />} />
+        <Route
+          path="/profile"
+          element={isAuthenticated ? <Profile /> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path="/admin"
+          element={
+            isAuthenticated && (user?.role === 'admin' || user?.role === 'subadmin')
+              ? <AdminDashboard />
+              : <Navigate to="/" replace />
+          }
+        />
       </Routes>
     </div>
   );
