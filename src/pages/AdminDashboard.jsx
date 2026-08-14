@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 const API_BASE = 'https://kalyanamala-backend-production.up.railway.app';
 
 const pageStyle = {
-  maxWidth: '1200px',
+  maxWidth: '1300px',
   margin: '30px auto',
   padding: '20px'
 };
@@ -37,7 +37,8 @@ const buttonStyle = {
   border: 'none',
   borderRadius: '6px',
   cursor: 'pointer',
-  marginRight: '8px'
+  marginRight: '8px',
+  marginTop: '8px'
 };
 
 const primaryBtn = {
@@ -76,11 +77,13 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
 
   const [loading,setLoading] = useState(true);
+  const [saving,setSaving] = useState(false);
   const [error,setError] = useState('');
   const [stats,setStats] = useState(null);
-
   const [users,setUsers] = useState([]);
   const [profiles,setProfiles] = useState([]);
+
+  const [activeTab,setActiveTab] = useState('dashboard');
 
   const [selectedUser,setSelectedUser] = useState(null);
   const [userEditForm,setUserEditForm] = useState({
@@ -99,51 +102,10 @@ const AdminDashboard = () => {
     reason: ''
   });
 
-  const [activeTab,setActiveTab] = useState('dashboard');
-  const [saving,setSaving] = useState(false);
-
-  useEffect(() => {
-    const loadDashboard = async () => {
-      if (!token) {
-        setError('Please login again.');
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const [statsRes,usersRes,profilesRes] = await Promise.all([
-          axios.get(`${API_BASE}/api/admin/dashboard/stats`, {
-            headers: { Authorization: `Bearer ${token}` }
-          }),
-          axios.get(`${API_BASE}/api/admin/users`, {
-            headers: { Authorization: `Bearer ${token}` }
-          }),
-          axios.get(`${API_BASE}/api/admin/profiles`, {
-            headers: { Authorization: `Bearer ${token}` }
-          })
-        ]);
-
-        setStats(statsRes.data.stats);
-        setUsers(usersRes.data.users || []);
-        setProfiles(profilesRes.data.profiles || []);
-      } catch (err) {
-        if (err.response?.status === 403) {
-          setError('You do not have admin access.');
-          navigate('/');
-        } else {
-          setError(err.response?.data?.message || err.response?.data?.error || 'Failed to load admin dashboard');
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadDashboard();
-  }, [token,navigate]);
-
-  const refreshData = async () => {
+  const loadAll = async () => {
     try {
       setLoading(true);
+
       const [statsRes,usersRes,profilesRes] = await Promise.all([
         axios.get(`${API_BASE}/api/admin/dashboard/stats`, {
           headers: { Authorization: `Bearer ${token}` }
@@ -160,10 +122,36 @@ const AdminDashboard = () => {
       setUsers(usersRes.data.users || []);
       setProfiles(profilesRes.data.profiles || []);
     } catch (err) {
-      setError(err.response?.data?.message || err.response?.data?.error || 'Failed to refresh data');
+      console.error(err);
+      if (err.response?.status === 403) {
+        setError('Access denied. Admin only.');
+        navigate('/');
+      } else {
+        setError(err.response?.data?.message || err.response?.data?.error || 'Failed to load dashboard');
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    if (!token) {
+      setError('Please login again.');
+      setLoading(false);
+      return;
+    }
+    loadAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
+  const handleRefresh = async () => {
+    await loadAll();
+  };
+
+  const handleLogout = async () => {
+    localStorage.removeItem('token');
+    navigate('/');
+    window.location.reload();
   };
 
   const handleUserEditClick = (u) => {
@@ -193,14 +181,11 @@ const AdminDashboard = () => {
       await axios.put(
         `${API_BASE}/api/admin/users/${selectedUser.id}`,
         userEditForm,
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      alert('User updated successfully');
       setSelectedUser(null);
-      await refreshData();
+      await loadAll();
+      alert('User updated successfully');
     } catch (err) {
       alert(err.response?.data?.message || err.response?.data?.error || 'Failed to update user');
     } finally {
@@ -227,25 +212,16 @@ const AdminDashboard = () => {
           status: profileAction.status,
           reason: profileAction.reason
         },
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      alert('Profile status updated successfully');
       setSelectedProfile(null);
-      await refreshData();
+      await loadAll();
+      alert('Profile status updated successfully');
     } catch (err) {
       alert(err.response?.data?.message || err.response?.data?.error || 'Failed to update profile');
     } finally {
       setSaving(false);
     }
-  };
-
-  const handleLogout = async () => {
-    localStorage.removeItem('token');
-    navigate('/');
-    window.location.reload();
   };
 
   if (loading) {
@@ -256,21 +232,16 @@ const AdminDashboard = () => {
     <div style={pageStyle}>
       <div style={{ marginBottom: '20px' }}>
         <h2>Admin Dashboard</h2>
-        <p>Welcome, {user?.firstName || 'Admin'}!</p>
+        <p>
+          Welcome, {user?.firstName || 'Admin'}
+          {user?.surname ? ` ${user.surname}` : ''}!
+        </p>
 
-        <div style={{ marginTop: '10px' }}>
-          <button style={primaryBtn} onClick={() => setActiveTab('dashboard')}>
-            Dashboard
-          </button>
-          <button style={secondaryBtn} onClick={() => setActiveTab('users')}>
-            Users
-          </button>
-          <button style={secondaryBtn} onClick={() => setActiveTab('profiles')}>
-            Profiles
-          </button>
-          <button style={dangerBtn} onClick={handleLogout}>
-            Logout
-          </button>
+        <div>
+          <button style={primaryBtn} onClick={() => setActiveTab('dashboard')}>Dashboard</button>
+          <button style={secondaryBtn} onClick={() => setActiveTab('users')}>Users</button>
+          <button style={secondaryBtn} onClick={() => setActiveTab('profiles')}>Browse Profiles</button>
+          <button style={dangerBtn} onClick={handleLogout}>Logout</button>
         </div>
       </div>
 
@@ -283,44 +254,18 @@ const AdminDashboard = () => {
       {activeTab === 'dashboard' && stats && (
         <>
           <div style={gridStyle}>
-            <div style={statCardStyle}>
-              <h3>{stats.totalUsers}</h3>
-              <p>Total Users</p>
-            </div>
-            <div style={statCardStyle}>
-              <h3>{stats.totalProfiles}</h3>
-              <p>Total Profiles</p>
-            </div>
-            <div style={statCardStyle}>
-              <h3>{stats.approvedProfiles}</h3>
-              <p>Approved Profiles</p>
-            </div>
-            <div style={statCardStyle}>
-              <h3>{stats.pendingProfiles}</h3>
-              <p>Pending Profiles</p>
-            </div>
-            <div style={statCardStyle}>
-              <h3>{stats.rejectedProfiles}</h3>
-              <p>Rejected Profiles</p>
-            </div>
-            <div style={statCardStyle}>
-              <h3>{stats.deletedProfiles}</h3>
-              <p>Deleted Profiles</p>
-            </div>
-            <div style={statCardStyle}>
-              <h3>{stats.activeUsers}</h3>
-              <p>Active Users</p>
-            </div>
-            <div style={statCardStyle}>
-              <h3>{stats.newUsersToday}</h3>
-              <p>New Users Today</p>
-            </div>
+            <div style={statCardStyle}><h3>{stats.totalUsers}</h3><p>Total Users</p></div>
+            <div style={statCardStyle}><h3>{stats.totalProfiles}</h3><p>Total Profiles</p></div>
+            <div style={statCardStyle}><h3>{stats.pendingProfiles}</h3><p>Pending Profiles</p></div>
+            <div style={statCardStyle}><h3>{stats.approvedProfiles}</h3><p>Approved Profiles</p></div>
+            <div style={statCardStyle}><h3>{stats.rejectedProfiles}</h3><p>Rejected Profiles</p></div>
+            <div style={statCardStyle}><h3>{stats.deletedProfiles}</h3><p>Deleted Profiles</p></div>
+            <div style={statCardStyle}><h3>{stats.activeUsers}</h3><p>Active Users</p></div>
+            <div style={statCardStyle}><h3>{stats.newUsersToday}</h3><p>New Users Today</p></div>
           </div>
 
           <div style={cardStyle}>
-            <button style={primaryBtn} onClick={refreshData}>
-              Refresh Dashboard
-            </button>
+            <button style={primaryBtn} onClick={handleRefresh}>Refresh Dashboard</button>
           </div>
         </>
       )}
@@ -329,9 +274,7 @@ const AdminDashboard = () => {
         <div>
           <div style={cardStyle}>
             <h3>Users</h3>
-            <button style={primaryBtn} onClick={refreshData}>
-              Refresh Users
-            </button>
+            <button style={primaryBtn} onClick={handleRefresh}>Refresh Users</button>
           </div>
 
           {users.map((u) => (
@@ -342,9 +285,7 @@ const AdminDashboard = () => {
               <p><strong>Role:</strong> {u.role}</p>
               <p><strong>Status:</strong> {u.status}</p>
 
-              <button style={primaryBtn} onClick={() => handleUserEditClick(u)}>
-                Edit User
-              </button>
+              <button style={primaryBtn} onClick={() => handleUserEditClick(u)}>Edit User</button>
             </div>
           ))}
         </div>
@@ -353,10 +294,8 @@ const AdminDashboard = () => {
       {activeTab === 'profiles' && (
         <div>
           <div style={cardStyle}>
-            <h3>Profiles</h3>
-            <button style={primaryBtn} onClick={refreshData}>
-              Refresh Profiles
-            </button>
+            <h3>Browse Profiles</h3>
+            <button style={primaryBtn} onClick={handleRefresh}>Refresh Profiles</button>
           </div>
 
           {profiles.map((p) => (
@@ -371,15 +310,9 @@ const AdminDashboard = () => {
               <p><strong>State:</strong> {p.currentAddress?.state || '-'}</p>
               <p><strong>Status:</strong> {p.approvalStatus}</p>
 
-              <button style={successBtn} onClick={() => handleProfileActionClick(p, 'approved')}>
-                Approve
-              </button>
-              <button style={dangerBtn} onClick={() => handleProfileActionClick(p, 'rejected')}>
-                Reject
-              </button>
-              <button style={secondaryBtn} onClick={() => handleProfileActionClick(p, 'deleted')}>
-                Delete
-              </button>
+              <button style={successBtn} onClick={() => handleProfileActionClick(p, 'approved')}>Approve</button>
+              <button style={dangerBtn} onClick={() => handleProfileActionClick(p, 'rejected')}>Reject</button>
+              <button style={secondaryBtn} onClick={() => handleProfileActionClick(p, 'deleted')}>Delete</button>
             </div>
           ))}
         </div>
@@ -432,7 +365,7 @@ const AdminDashboard = () => {
       {selectedProfile && (
         <div style={cardStyle}>
           <h3>Update Profile Status</h3>
-          <p><strong>Profile:</strong> {selectedProfile.fullName || selectedProfile.profileId}</p>
+          <p><strong>Profile:</strong> {selectedProfile.profileId || selectedProfile.fullName}</p>
 
           <label>Status</label>
           <select
