@@ -1,13 +1,5 @@
 import React, { useContext } from 'react';
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Link,
-  useNavigate,
-  Navigate
-} from 'react-router-dom';
-
+import { BrowserRouter as Router, Routes, Route, Link, Navigate, useNavigate } from 'react-router-dom';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 
 import Home from './pages/Home';
@@ -26,20 +18,8 @@ const NavBar = () => {
   };
 
   return (
-    <nav
-      style={{
-        backgroundColor: '#333',
-        color: 'white',
-        padding: '15px 20px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}
-    >
-      <Link
-        to="/"
-        style={{ color: 'white', textDecoration: 'none', fontSize: '20px', fontWeight: 'bold' }}
-      >
+    <nav style={{ backgroundColor: '#333', color: 'white', padding: '15px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Link to="/" style={{ color: 'white', textDecoration: 'none', fontSize: '20px', fontWeight: 'bold' }}>
         💍 Kalyanamala
       </Link>
 
@@ -47,22 +27,15 @@ const NavBar = () => {
         {isAuthenticated ? (
           <>
             <span style={{ marginRight: '20px' }}>
-              Hi, {user?.firstName}
-              {user?.surname ? ` ${user.surname}` : ''}!
+              Hi, {user?.firstName}{user?.surname ? ` ${user.surname}` : ''}!
             </span>
 
-            <Link
-              to="/profile"
-              style={{ color: 'white', marginRight: '15px', textDecoration: 'none' }}
-            >
+            <Link to="/profile" style={{ color: 'white', marginRight: '15px', textDecoration: 'none' }}>
               Profile
             </Link>
 
             {(user?.role === 'admin' || user?.role === 'subadmin') && (
-              <Link
-                to="/admin"
-                style={{ color: 'white', marginRight: '15px', textDecoration: 'none' }}
-              >
+              <Link to="/admin" style={{ color: 'white', marginRight: '15px', textDecoration: 'none' }}>
                 Admin
               </Link>
             )}
@@ -83,10 +56,7 @@ const NavBar = () => {
           </>
         ) : (
           <>
-            <Link
-              to="/login"
-              style={{ color: 'white', marginRight: '15px', textDecoration: 'none' }}
-            >
+            <Link to="/login" style={{ color: 'white', marginRight: '15px', textDecoration: 'none' }}>
               Login
             </Link>
             <Link to="/register" style={{ color: 'white', textDecoration: 'none' }}>
@@ -109,10 +79,7 @@ function AppContent() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route
-          path="/profile"
-          element={isAuthenticated ? <Profile /> : <Navigate to="/login" replace />}
-        />
+        <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/login" replace />} />
         <Route
           path="/admin"
           element={
