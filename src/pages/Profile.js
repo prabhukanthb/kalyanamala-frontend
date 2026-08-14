@@ -368,7 +368,7 @@ const Profile = () => {
             <p><strong>DOB:</strong> {profile.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString() : '-'}</p>
             <p><strong>Height:</strong> {profile.heightFeet} ft {profile.heightInches} in</p>
           </div>
-
+<p><strong>Profile ID:</strong> {profile?.profileId || '-'}</p>
           <div style={sectionStyle}>
             <h3>Religion & Family</h3>
             <p><strong>Religion:</strong> {profile.religion}</p>
