@@ -72,10 +72,7 @@ const AdminDashboard = () => {
   const [users,setUsers] = useState([]);
   const [profiles,setProfiles] = useState([]);
   const [activeTab,setActiveTab] = useState('dashboard');
-
   const [search,setSearch] = useState('');
-  const [selectedProfile,setSelectedProfile] = useState(null);
-  const [profileMode,setProfileMode] = useState('view'); // view | edit | create
 
   const [selectedUser,setSelectedUser] = useState(null);
   const [userEditForm,setUserEditForm] = useState({
@@ -88,6 +85,8 @@ const AdminDashboard = () => {
     status: 'active'
   });
 
+  const [selectedProfile,setSelectedProfile] = useState(null);
+  const [profileMode,setProfileMode] = useState('view'); // view | edit | create
   const [profileForm,setProfileForm] = useState({
     userId: '',
     gender: '',
@@ -172,6 +171,11 @@ const AdminDashboard = () => {
     await loadAll(search);
   };
 
+  const clearSearch = async () => {
+    setSearch('');
+    await loadAll('');
+  };
+
   const refresh = async () => {
     await loadAll(search);
   };
@@ -182,10 +186,48 @@ const AdminDashboard = () => {
     window.location.reload();
   };
 
-  const handleProfileRowClick = async (profile) => {
+  const handleUserEditClick = (u) => {
+    setSelectedUser(u);
+    setUserEditForm({
+      email: u.email || '',
+      phone: u.phone || '',
+      firstName: u.firstName || '',
+      lastName: u.lastName || '',
+      surname: u.surname || '',
+      role: u.role || 'user',
+      status: u.status || 'active'
+    });
+  };
+
+  const handleUserEditChange = (e) => {
+    const { name, value } = e.target;
+    setUserEditForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleUserUpdate = async (e) => {
+    e.preventDefault();
+    if (!selectedUser) return;
+
+    setSaving(true);
+    try {
+      await axios.put(
+        `${API_BASE}/api/admin/users/${selectedUser.id}`,
+        userEditForm,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setSelectedUser(null);
+      await refresh();
+      alert('User updated successfully');
+    } catch (err) {
+      alert(err.response?.data?.message || err.response?.data?.error || 'Failed to update user');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openProfileView = (profile) => {
     setSelectedProfile(profile);
     setProfileMode('view');
-
     setProfileForm({
       userId: profile.userId?._id || profile.userId || '',
       gender: profile.gender || '',
@@ -225,36 +267,47 @@ const AdminDashboard = () => {
     });
   };
 
-  const handleUserEditClick = (u) => {
-    setSelectedUser(u);
-    setUserEditForm({
-      email: u.email || '',
-      phone: u.phone || '',
-      firstName: u.firstName || '',
-      lastName: u.lastName || '',
-      surname: u.surname || '',
-      role: u.role || 'user',
-      status: u.status || 'active'
+  const openCreateProfile = () => {
+    setSelectedProfile(null);
+    setProfileMode('create');
+    setProfileForm({
+      userId: '',
+      gender: '',
+      dateOfBirth: '',
+      heightFeet: '',
+      heightInches: '',
+      religion: '',
+      subCaste: '',
+      siblingsCount: '',
+      maritalStatus: '',
+      haveChildren: 'No',
+      familyStatus: '',
+      familyValues: '',
+      fatherName: '',
+      fatherOccupation: '',
+      motherName: '',
+      motherOccupation: '',
+      highestEducation: '',
+      fieldOfStudy: '',
+      college: '',
+      occupation: '',
+      employmentType: '',
+      companyName: '',
+      jobTitle: '',
+      jobLocation: '',
+      industry: '',
+      income: '',
+      streetName: '',
+      city: '',
+      state: '',
+      country: 'India',
+      pinCode: '',
+      aboutMe: '',
+      preferredMatch: 'any_religion',
+      approvalStatus: 'approved',
+      showInSearch: true
     });
-  };
-
-  const handleUserUpdate = async (e) => {
-    e.preventDefault();
-    setSaving(true);
-    try {
-      await axios.put(
-        `${API_BASE}/api/admin/users/${selectedUser.id}`,
-        userEditForm,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setSelectedUser(null);
-      await refresh();
-      alert('User updated successfully');
-    } catch (err) {
-      alert(err.response?.data?.message || err.response?.data?.error || 'Failed to update user');
-    } finally {
-      setSaving(false);
-    }
+    setActiveTab('profiles');
   };
 
   const handleProfileFormChange = (e) => {
@@ -339,49 +392,6 @@ const AdminDashboard = () => {
     }
   };
 
-  const openCreateProfile = () => {
-    setSelectedProfile(null);
-    setProfileMode('create');
-    setProfileForm({
-      userId: '',
-      gender: '',
-      dateOfBirth: '',
-      heightFeet: '',
-      heightInches: '',
-      religion: '',
-      subCaste: '',
-      siblingsCount: '',
-      maritalStatus: '',
-      haveChildren: 'No',
-      familyStatus: '',
-      familyValues: '',
-      fatherName: '',
-      fatherOccupation: '',
-      motherName: '',
-      motherOccupation: '',
-      highestEducation: '',
-      fieldOfStudy: '',
-      college: '',
-      occupation: '',
-      employmentType: '',
-      companyName: '',
-      jobTitle: '',
-      jobLocation: '',
-      industry: '',
-      income: '',
-      streetName: '',
-      city: '',
-      state: '',
-      country: 'India',
-      pinCode: '',
-      aboutMe: '',
-      preferredMatch: 'any_religion',
-      approvalStatus: 'approved',
-      showInSearch: true
-    });
-    setActiveTab('profiles');
-  };
-
   if (loading) return <div style={pageStyle}>Loading admin dashboard...</div>;
 
   return (
@@ -410,9 +420,7 @@ const AdminDashboard = () => {
             style={inputStyle}
           />
           <button type="submit" style={primaryBtn}>Search</button>
-          <button type="button" style={secondaryBtn} onClick={() => { setSearch(''); loadAll(''); }}>
-            Clear
-          </button>
+          <button type="button" style={secondaryBtn} onClick={clearSearch}>Clear</button>
         </form>
       </div>
 
@@ -437,7 +445,10 @@ const AdminDashboard = () => {
         <div style={cardStyle}>
           <h3>Users</h3>
           {users.map((u) => (
-            <div key={u.id} style={{ borderBottom: '1px solid #eee', paddingBottom: '12px', marginBottom: '12px' }}>
+            <div
+              key={u.id}
+              style={{ borderBottom: '1px solid #eee', paddingBottom: '12px', marginBottom: '12px' }}
+            >
               <p><strong>Name:</strong> {u.firstName} {u.lastName} {u.surname ? `(${u.surname})` : ''}</p>
               <p><strong>Email:</strong> {u.email}</p>
               <p><strong>Phone:</strong> {u.phone}</p>
@@ -450,65 +461,63 @@ const AdminDashboard = () => {
       )}
 
       {activeTab === 'profiles' && (
-        <div>
-          <div style={cardStyle}>
-            <h3>Profiles</h3>
-            <p>Profiles are shown below in table rows.</p>
+        <div style={cardStyle}>
+          <h3>Profiles</h3>
 
-            <div style={{ overflowX: 'auto' }}>
-              <table style={tableStyle}>
-                <thead>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={tableStyle}>
+              <thead>
+                <tr>
+                  <th style={thStyle}>Profile ID</th>
+                  <th style={thStyle}>Name</th>
+                  <th style={thStyle}>Age</th>
+                  <th style={thStyle}>Gender</th>
+                  <th style={thStyle}>Religion</th>
+                  <th style={thStyle}>City</th>
+                  <th style={thStyle}>State</th>
+                  <th style={thStyle}>Status</th>
+                  <th style={thStyle}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {profiles.length > 0 ? (
+                  profiles.map((p) => {
+                    const fullName = [
+                      p.userId?.firstName || '',
+                      p.userId?.lastName || '',
+                      p.userId?.surname ? `(${p.userId.surname})` : ''
+                    ].join(' ').trim() || '-';
+
+                    const age = p.dateOfBirth
+                      ? Math.floor((Date.now() - new Date(p.dateOfBirth).getTime()) / (1000 * 60 * 60 * 24 * 365.25))
+                      : '-';
+
+                    return (
+                      <tr key={p._id}>
+                        <td style={thTdStyle}>{p.profileId || '-'}</td>
+                        <td style={thTdStyle}>{fullName}</td>
+                        <td style={thTdStyle}>{age}</td>
+                        <td style={thTdStyle}>{p.gender || '-'}</td>
+                        <td style={thTdStyle}>{p.religion || '-'}</td>
+                        <td style={thTdStyle}>{p.currentAddress?.city || '-'}</td>
+                        <td style={thTdStyle}>{p.currentAddress?.state || '-'}</td>
+                        <td style={thTdStyle}>{p.approvalStatus || '-'}</td>
+                        <td style={thTdStyle}>
+                          <button style={secondaryBtn} onClick={() => openProfileView(p)}>View / Edit</button>
+                          <button style={successBtn} onClick={() => approveProfile(p._id)}>Approve</button>
+                          <button style={dangerBtn} onClick={() => rejectProfile(p._id)}>Reject</button>
+                          <button style={secondaryBtn} onClick={() => deleteProfile(p._id)}>Delete</button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
                   <tr>
-                    <th style={thStyle}>Profile ID</th>
-                    <th style={thStyle}>Name</th>
-                    <th style={thStyle}>Age</th>
-                    <th style={thStyle}>Gender</th>
-                    <th style={thStyle}>Religion</th>
-                    <th style={thStyle}>City</th>
-                    <th style={thStyle}>State</th>
-                    <th style={thStyle}>Status</th>
-                    <th style={thStyle}>Actions</th>
+                    <td style={thTdStyle} colSpan="9">No profiles found.</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {profiles.length > 0 ? (
-                    profiles.map((p) => {
-                      const fullName =
-                        p.userId?.firstName || p.userId?.lastName || p.userId?.surname
-                          ? `${p.userId?.firstName || ''} ${p.userId?.lastName || ''} ${p.userId?.surname ? `(${p.userId.surname})` : ''}`.trim()
-                          : '-';
-
-                      const age = p.dateOfBirth
-                        ? Math.floor((Date.now() - new Date(p.dateOfBirth).getTime()) / (1000 * 60 * 60 * 24 * 365.25))
-                        : '-';
-
-                      return (
-                        <tr key={p._id}>
-                          <td style={thTdStyle}>{p.profileId || '-'}</td>
-                          <td style={thTdStyle}>{fullName}</td>
-                          <td style={thTdStyle}>{age}</td>
-                          <td style={thTdStyle}>{p.gender || '-'}</td>
-                          <td style={thTdStyle}>{p.religion || '-'}</td>
-                          <td style={thTdStyle}>{p.currentAddress?.city || '-'}</td>
-                          <td style={thTdStyle}>{p.currentAddress?.state || '-'}</td>
-                          <td style={thTdStyle}>{p.approvalStatus || '-'}</td>
-                          <td style={thTdStyle}>
-                            <button style={secondaryBtn} onClick={() => handleProfileRowClick(p)}>View / Edit</button>
-                            <button style={successBtn} onClick={() => approveProfile(p._id)}>Approve</button>
-                            <button style={dangerBtn} onClick={() => rejectProfile(p._id)}>Reject</button>
-                            <button style={secondaryBtn} onClick={() => deleteProfile(p._id)}>Delete</button>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  ) : (
-                    <tr>
-                      <td style={thTdStyle} colSpan="9">No profiles found.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
@@ -517,18 +526,58 @@ const AdminDashboard = () => {
         <div style={cardStyle}>
           <h3>Edit User</h3>
           <form onSubmit={handleUserUpdate}>
-            <input name="email" value={userEditForm.email} onChange={(e) => setUserEditForm(prev => ({ ...prev, email: e.target.value }))} style={inputStyle} />
-            <input name="phone" value={userEditForm.phone} onChange={(e) => setUserEditForm(prev => ({ ...prev, phone: e.target.value }))} style={inputStyle} />
-            <input name="firstName" value={userEditForm.firstName} onChange={(e) => setUserEditForm(prev => ({ ...prev, firstName: e.target.value }))} style={inputStyle} />
-            <input name="lastName" value={userEditForm.lastName} onChange={(e) => setUserEditForm(prev => ({ ...prev, lastName: e.target.value }))} style={inputStyle} />
-            <input name="surname" value={userEditForm.surname} onChange={(e) => setUserEditForm(prev => ({ ...prev, surname: e.target.value }))} style={inputStyle} />
+            <label>Email</label>
+            <input
+              name="email"
+              value={userEditForm.email}
+              onChange={handleUserEditChange}
+              style={inputStyle}
+              required
+            />
 
+            <label>Phone</label>
+            <input
+              name="phone"
+              value={userEditForm.phone}
+              onChange={handleUserEditChange}
+              style={inputStyle}
+              required
+            />
+
+            <label>First Name</label>
+            <input
+              name="firstName"
+              value={userEditForm.firstName}
+              onChange={handleUserEditChange}
+              style={inputStyle}
+              required
+            />
+
+            <label>Last Name</label>
+            <input
+              name="lastName"
+              value={userEditForm.lastName}
+              onChange={handleUserEditChange}
+              style={inputStyle}
+              required
+            />
+
+            <label>Surname</label>
+            <input
+              name="surname"
+              value={userEditForm.surname}
+              onChange={handleUserEditChange}
+              style={inputStyle}
+            />
+
+            <label>Role</label>
             <select name="role" value={userEditForm.role} onChange={handleUserEditChange} style={inputStyle}>
               <option value="user">User</option>
               <option value="subadmin">Subadmin</option>
               <option value="admin">Admin</option>
             </select>
 
+            <label>Status</label>
             <select name="status" value={userEditForm.status} onChange={handleUserEditChange} style={inputStyle}>
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
@@ -539,7 +588,9 @@ const AdminDashboard = () => {
             <button type="submit" style={primaryBtn} disabled={saving}>
               {saving ? 'Saving...' : 'Save User'}
             </button>
-            <button type="button" style={secondaryBtn} onClick={() => setSelectedUser(null)}>Cancel</button>
+            <button type="button" style={secondaryBtn} onClick={() => setSelectedUser(null)}>
+              Cancel
+            </button>
           </form>
         </div>
       )}
@@ -597,12 +648,13 @@ const AdminDashboard = () => {
               <button type="button" style={primaryBtn} onClick={saveProfile} disabled={saving}>
                 {saving ? 'Saving...' : profileMode === 'create' ? 'Create Profile' : 'Save Profile'}
               </button>
-              <button type="button" style={secondaryBtn} onClick={() => setSelectedProfile(null)}>Cancel</button>
+              <button type="button" style={secondaryBtn} onClick={() => setSelectedProfile(null)}>
+                Cancel
+              </button>
             </div>
           )}
         </div>
       )}
-
     </div>
   );
 };
