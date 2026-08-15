@@ -125,36 +125,40 @@ const AdminDashboard = () => {
     showInSearch: true
   });
 
-  const loadAll = async (searchValue = '') => {
-    try {
-      setLoading(true);
+ const loadAll = async (searchValue = '') => {
+  try {
+    setLoading(true);
 
-      const [statsRes,usersRes,profilesRes] = await Promise.all([
-        axios.get(`${API_BASE}/api/admin/dashboard/stats`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        axios.get(`${API_BASE}/api/admin/users`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        axios.get(`${API_BASE}/api/admin/profiles?search=${encodeURIComponent(searchValue)}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-      ]);
+    const searchParam = searchValue.trim()
+      ? `?search=${encodeURIComponent(searchValue.trim())}`
+      : '';
 
-      setStats(statsRes.data.stats);
-      setUsers(usersRes.data.users || []);
-      setProfiles(profilesRes.data.profiles || []);
-    } catch (err) {
-      if (err.response?.status === 403) {
-        setError('Access denied. Admin only.');
-        navigate('/');
-      } else {
-        setError(err.response?.data?.message || err.response?.data?.error || 'Failed to load dashboard');
-      }
-    } finally {
-      setLoading(false);
+    const [statsRes, usersRes, profilesRes] = await Promise.all([
+      axios.get(`${API_BASE}/api/admin/dashboard/stats`, {
+        headers: { Authorization: `Bearer ${token}` }
+      }),
+      axios.get(`${API_BASE}/api/admin/users`, {
+        headers: { Authorization: `Bearer ${token}` }
+      }),
+      axios.get(`${API_BASE}/api/admin/profiles${searchParam}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+    ]);
+
+    setStats(statsRes.data.stats);
+    setUsers(usersRes.data.users || []);
+    setProfiles(profilesRes.data.profiles || []);
+  } catch (err) {
+    if (err.response?.status === 403) {
+      setError('Access denied. Admin only.');
+      navigate('/');
+    } else {
+      setError(err.response?.data?.message || err.response?.data?.error || 'Failed to load dashboard');
     }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     if (!token) {
