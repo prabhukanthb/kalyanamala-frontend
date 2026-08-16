@@ -586,7 +586,8 @@ const AdminDashboard = () => {
         </div>
       )}
 
-      {selectedProfile && (
+      {(selectedProfile || profileMode === 'create') && (
+
         <div style={cardStyle}>
           <h3>{profileMode === 'create' ? 'Create Profile' : profileMode === 'edit' ? 'Edit Profile' : 'View Profile'}</h3>
 
