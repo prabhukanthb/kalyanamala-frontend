@@ -104,6 +104,13 @@ const AdminDashboard = () => {
   const [selectedProfile,setSelectedProfile] = useState(null);
   const [profileMode,setProfileMode] = useState('view'); // view | edit | create
   const [profileForm,setProfileForm] = useState({
+    firstName: '',
+    lastName: '',
+    surname: '',
+    email: '',
+    phone: '',
+    password: '',
+
     userId: '',
     gender: '',
     dateOfBirth: '',
@@ -249,6 +256,13 @@ const AdminDashboard = () => {
     setSelectedProfile(profile);
     setProfileMode('view');
     setProfileForm({
+      firstName: profile.userId?.firstName || '',
+      lastName: profile.userId?.lastName || '',
+      surname: profile.userId?.surname || '',
+      email: profile.userId?.email || '',
+      phone: profile.userId?.phone || '',
+      password: '',
+
       userId: profile.userId?._id || profile.userId || '',
       gender: profile.gender || '',
       dateOfBirth: profile.dateOfBirth ? new Date(profile.dateOfBirth).toISOString().split('T')[0] : '',
@@ -291,6 +305,13 @@ const AdminDashboard = () => {
     setSelectedProfile(null);
     setProfileMode('create');
     setProfileForm({
+      firstName: '',
+      lastName: '',
+      surname: '',
+      email: '',
+      phone: '',
+      password: '',
+
       userId: '',
       gender: '',
       dateOfBirth: '',
@@ -523,10 +544,10 @@ const AdminDashboard = () => {
                         <td style={thTdStyle}>{p.currentAddress?.state || '-'}</td>
                         <td style={thTdStyle}>{p.approvalStatus || '-'}</td>
                         <td style={thTdStyle}>
-                          <button style={secondaryBtn} onClick={() => openProfileView(p)}>View / Edit</button>
-                          <button style={successBtn} onClick={() => approveProfile(p._id)}>Approve</button>
-                          <button style={dangerBtn} onClick={() => rejectProfile(p._id)}>Reject</button>
-                          <button style={secondaryBtn} onClick={() => deleteProfile(p._id)}>Delete</button>
+                          <button type="button" style={secondaryBtn} onClick={() => openProfileView(p)}>View / Edit</button>
+                          <button type="button" style={successBtn} onClick={() => approveProfile(p._id)}>Approve</button>
+                          <button type="button" style={dangerBtn} onClick={() => rejectProfile(p._id)}>Reject</button>
+                          <button type="button" style={secondaryBtn} onClick={() => deleteProfile(p._id)}>Delete</button>
                         </td>
                       </tr>
                     );
@@ -542,32 +563,26 @@ const AdminDashboard = () => {
         </div>
       )}
 
-      {selectedUser && (
+      {(selectedUser) && (
         <div style={cardStyle}>
           <h3>Edit User</h3>
           <form onSubmit={handleUserUpdate}>
             <label>Email</label>
             <input name="email" value={userEditForm.email} onChange={handleUserEditChange} style={inputStyle} required />
-
             <label>Phone</label>
             <input name="phone" value={userEditForm.phone} onChange={handleUserEditChange} style={inputStyle} required />
-
             <label>First Name</label>
             <input name="firstName" value={userEditForm.firstName} onChange={handleUserEditChange} style={inputStyle} required />
-
             <label>Last Name</label>
             <input name="lastName" value={userEditForm.lastName} onChange={handleUserEditChange} style={inputStyle} required />
-
             <label>Surname</label>
             <input name="surname" value={userEditForm.surname} onChange={handleUserEditChange} style={inputStyle} />
-
             <label>Role</label>
             <select name="role" value={userEditForm.role} onChange={handleUserEditChange} style={inputStyle}>
               <option value="user">User</option>
               <option value="subadmin">Subadmin</option>
               <option value="admin">Admin</option>
             </select>
-
             <label>Status</label>
             <select name="status" value={userEditForm.status} onChange={handleUserEditChange} style={inputStyle}>
               <option value="active">Active</option>
@@ -587,46 +602,65 @@ const AdminDashboard = () => {
       )}
 
       {(selectedProfile || profileMode === 'create') && (
-
         <div style={cardStyle}>
-          <h3>{profileMode === 'create' ? 'Create Profile' : profileMode === 'edit' ? 'Edit Profile' : 'View Profile'}</h3>
+          <h3>
+            {profileMode === 'create'
+              ? 'Create Profile'
+              : profileMode === 'edit'
+              ? 'Edit Profile'
+              : 'View Profile'}
+          </h3>
 
-          {profileMode === 'view' ? (
+          {profileMode === 'view' && selectedProfile ? (
             <div>
               <p><strong>Profile ID:</strong> {selectedProfile.profileId}</p>
               <p><strong>Name:</strong> {selectedProfile.userId?.firstName} {selectedProfile.userId?.lastName}</p>
+              <p><strong>Email:</strong> {selectedProfile.userId?.email}</p>
+              <p><strong>Phone:</strong> {selectedProfile.userId?.phone}</p>
               <p><strong>Gender:</strong> {selectedProfile.gender}</p>
               <p><strong>Date of Birth:</strong> {selectedProfile.dateOfBirth}</p>
               <p><strong>Height:</strong> {selectedProfile.heightFeet} ft {selectedProfile.heightInches} in</p>
               <p><strong>Religion:</strong> {selectedProfile.religion}</p>
               <p><strong>Sub Caste:</strong> {selectedProfile.subCaste}</p>
-              <p><strong>Siblings Count:</strong> {selectedProfile.siblingsCount}</p>
               <p><strong>Marital Status:</strong> {selectedProfile.maritalStatus}</p>
-              <p><strong>Father Name:</strong> {selectedProfile.fatherName}</p>
-              <p><strong>Father Occupation:</strong> {selectedProfile.fatherOccupation}</p>
-              <p><strong>Mother Name:</strong> {selectedProfile.motherName}</p>
-              <p><strong>Mother Occupation:</strong> {selectedProfile.motherOccupation}</p>
               <p><strong>Education:</strong> {selectedProfile.highestEducation}</p>
               <p><strong>Occupation:</strong> {selectedProfile.occupation}</p>
-              <p><strong>Company:</strong> {selectedProfile.companyName}</p>
-              <p><strong>Job Title:</strong> {selectedProfile.jobTitle}</p>
-              <p><strong>Job Location:</strong> {selectedProfile.jobLocation}</p>
-              <p><strong>Industry:</strong> {selectedProfile.industry}</p>
-              <p><strong>Income:</strong> {selectedProfile.income}</p>
-              <p>
-                <strong>Address:</strong>{' '}
-                {selectedProfile.currentAddress?.streetName}, {selectedProfile.currentAddress?.city},{' '}
-                {selectedProfile.currentAddress?.state}
-              </p>
+              <p><strong>City:</strong> {selectedProfile.currentAddress?.city}</p>
+              <p><strong>State:</strong> {selectedProfile.currentAddress?.state}</p>
               <p><strong>About:</strong> {selectedProfile.aboutMe}</p>
               <p><strong>Status:</strong> {selectedProfile.approvalStatus}</p>
 
-              <button style={primaryBtn} onClick={() => setProfileMode('edit')}>Edit Profile</button>
-              <button style={secondaryBtn} onClick={() => setSelectedProfile(null)}>Close</button>
+              <button type="button" style={primaryBtn} onClick={() => setProfileMode('edit')}>Edit Profile</button>
+              <button type="button" style={secondaryBtn} onClick={() => setSelectedProfile(null)}>Close</button>
             </div>
           ) : (
             <div>
               <div style={formGridStyle}>
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>First Name</label>
+                  <input name="firstName" value={profileForm.firstName} onChange={handleProfileFormChange} style={inputStyle} />
+                </div>
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Last Name</label>
+                  <input name="lastName" value={profileForm.lastName} onChange={handleProfileFormChange} style={inputStyle} />
+                </div>
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Surname</label>
+                  <input name="surname" value={profileForm.surname} onChange={handleProfileFormChange} style={inputStyle} />
+                </div>
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Email</label>
+                  <input name="email" type="email" value={profileForm.email} onChange={handleProfileFormChange} style={inputStyle} />
+                </div>
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Mobile</label>
+                  <input name="phone" value={profileForm.phone} onChange={handleProfileFormChange} style={inputStyle} />
+                </div>
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Password</label>
+                  <input name="password" type="password" value={profileForm.password} onChange={handleProfileFormChange} style={inputStyle} />
+                </div>
+
                 <div style={fieldStyle}>
                   <label style={labelStyle}>Gender</label>
                   <select name="gender" value={profileForm.gender} onChange={handleProfileFormChange} style={inputStyle}>
@@ -638,13 +672,7 @@ const AdminDashboard = () => {
 
                 <div style={fieldStyle}>
                   <label style={labelStyle}>Date of Birth</label>
-                  <input
-                    name="dateOfBirth"
-                    type="date"
-                    value={profileForm.dateOfBirth}
-                    onChange={handleProfileFormChange}
-                    style={inputStyle}
-                  />
+                  <input name="dateOfBirth" type="date" value={profileForm.dateOfBirth} onChange={handleProfileFormChange} style={inputStyle} />
                 </div>
 
                 <div style={fieldStyle}>
@@ -824,16 +852,6 @@ const AdminDashboard = () => {
                 <div style={fieldStyle}>
                   <label style={labelStyle}>About Me</label>
                   <textarea name="aboutMe" value={profileForm.aboutMe} onChange={handleProfileFormChange} style={inputStyle} rows="4" />
-                </div>
-
-                <div style={fieldStyle}>
-                  <label style={labelStyle}>Approval Status</label>
-                  <select name="approvalStatus" value={profileForm.approvalStatus} onChange={handleProfileFormChange} style={inputStyle}>
-                    <option value="approved">Approved</option>
-                    <option value="pending">Pending</option>
-                    <option value="rejected">Rejected</option>
-                    <option value="deleted">Deleted</option>
-                  </select>
                 </div>
 
                 <div style={fieldStyle}>
