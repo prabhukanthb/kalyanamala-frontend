@@ -61,6 +61,22 @@ const thStyle = {
   fontWeight: 'bold'
 };
 
+const formGridStyle = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+  gap: '14px'
+};
+
+const fieldStyle = {
+  display: 'flex',
+  flexDirection: 'column'
+};
+
+const labelStyle = {
+  marginBottom: '6px',
+  fontWeight: '600'
+};
+
 const AdminDashboard = () => {
   const { token, user } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -125,40 +141,40 @@ const AdminDashboard = () => {
     showInSearch: true
   });
 
- const loadAll = async (searchValue = '') => {
-  try {
-    setLoading(true);
+  const loadAll = async (searchValue = '') => {
+    try {
+      setLoading(true);
 
-    const searchParam = searchValue.trim()
-      ? `?search=${encodeURIComponent(searchValue.trim())}`
-      : '';
+      const searchParam = searchValue.trim()
+        ? `?search=${encodeURIComponent(searchValue.trim())}`
+        : '';
 
-    const [statsRes, usersRes, profilesRes] = await Promise.all([
-      axios.get(`${API_BASE}/api/admin/dashboard/stats`, {
-        headers: { Authorization: `Bearer ${token}` }
-      }),
-      axios.get(`${API_BASE}/api/admin/users`, {
-        headers: { Authorization: `Bearer ${token}` }
-      }),
-      axios.get(`${API_BASE}/api/admin/profiles${searchParam}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-    ]);
+      const [statsRes,usersRes,profilesRes] = await Promise.all([
+        axios.get(`${API_BASE}/api/admin/dashboard/stats`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        axios.get(`${API_BASE}/api/admin/users`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        axios.get(`${API_BASE}/api/admin/profiles${searchParam}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      ]);
 
-    setStats(statsRes.data.stats);
-    setUsers(usersRes.data.users || []);
-    setProfiles(profilesRes.data.profiles || []);
-  } catch (err) {
-    if (err.response?.status === 403) {
-      setError('Access denied. Admin only.');
-      navigate('/');
-    } else {
-      setError(err.response?.data?.message || err.response?.data?.error || 'Failed to load dashboard');
+      setStats(statsRes.data.stats);
+      setUsers(usersRes.data.users || []);
+      setProfiles(profilesRes.data.profiles || []);
+    } catch (err) {
+      if (err.response?.status === 403) {
+        setError('Access denied. Admin only.');
+        navigate('/');
+      } else {
+        setError(err.response?.data?.message || err.response?.data?.error || 'Failed to load dashboard');
+      }
+    } finally {
+      setLoading(false);
     }
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   useEffect(() => {
     if (!token) {
@@ -531,48 +547,19 @@ const AdminDashboard = () => {
           <h3>Edit User</h3>
           <form onSubmit={handleUserUpdate}>
             <label>Email</label>
-            <input
-              name="email"
-              value={userEditForm.email}
-              onChange={handleUserEditChange}
-              style={inputStyle}
-              required
-            />
+            <input name="email" value={userEditForm.email} onChange={handleUserEditChange} style={inputStyle} required />
 
             <label>Phone</label>
-            <input
-              name="phone"
-              value={userEditForm.phone}
-              onChange={handleUserEditChange}
-              style={inputStyle}
-              required
-            />
+            <input name="phone" value={userEditForm.phone} onChange={handleUserEditChange} style={inputStyle} required />
 
             <label>First Name</label>
-            <input
-              name="firstName"
-              value={userEditForm.firstName}
-              onChange={handleUserEditChange}
-              style={inputStyle}
-              required
-            />
+            <input name="firstName" value={userEditForm.firstName} onChange={handleUserEditChange} style={inputStyle} required />
 
             <label>Last Name</label>
-            <input
-              name="lastName"
-              value={userEditForm.lastName}
-              onChange={handleUserEditChange}
-              style={inputStyle}
-              required
-            />
+            <input name="lastName" value={userEditForm.lastName} onChange={handleUserEditChange} style={inputStyle} required />
 
             <label>Surname</label>
-            <input
-              name="surname"
-              value={userEditForm.surname}
-              onChange={handleUserEditChange}
-              style={inputStyle}
-            />
+            <input name="surname" value={userEditForm.surname} onChange={handleUserEditChange} style={inputStyle} />
 
             <label>Role</label>
             <select name="role" value={userEditForm.role} onChange={handleUserEditChange} style={inputStyle}>
@@ -608,53 +595,273 @@ const AdminDashboard = () => {
               <p><strong>Profile ID:</strong> {selectedProfile.profileId}</p>
               <p><strong>Name:</strong> {selectedProfile.userId?.firstName} {selectedProfile.userId?.lastName}</p>
               <p><strong>Gender:</strong> {selectedProfile.gender}</p>
+              <p><strong>Date of Birth:</strong> {selectedProfile.dateOfBirth}</p>
+              <p><strong>Height:</strong> {selectedProfile.heightFeet} ft {selectedProfile.heightInches} in</p>
               <p><strong>Religion:</strong> {selectedProfile.religion}</p>
+              <p><strong>Sub Caste:</strong> {selectedProfile.subCaste}</p>
+              <p><strong>Siblings Count:</strong> {selectedProfile.siblingsCount}</p>
+              <p><strong>Marital Status:</strong> {selectedProfile.maritalStatus}</p>
+              <p><strong>Father Name:</strong> {selectedProfile.fatherName}</p>
+              <p><strong>Father Occupation:</strong> {selectedProfile.fatherOccupation}</p>
+              <p><strong>Mother Name:</strong> {selectedProfile.motherName}</p>
+              <p><strong>Mother Occupation:</strong> {selectedProfile.motherOccupation}</p>
               <p><strong>Education:</strong> {selectedProfile.highestEducation}</p>
-              <p><strong>City:</strong> {selectedProfile.currentAddress?.city}</p>
-              <p><strong>State:</strong> {selectedProfile.currentAddress?.state}</p>
-              <p><strong>Status:</strong> {selectedProfile.approvalStatus}</p>
+              <p><strong>Occupation:</strong> {selectedProfile.occupation}</p>
+              <p><strong>Company:</strong> {selectedProfile.companyName}</p>
+              <p><strong>Job Title:</strong> {selectedProfile.jobTitle}</p>
+              <p><strong>Job Location:</strong> {selectedProfile.jobLocation}</p>
+              <p><strong>Industry:</strong> {selectedProfile.industry}</p>
+              <p><strong>Income:</strong> {selectedProfile.income}</p>
+              <p>
+                <strong>Address:</strong>{' '}
+                {selectedProfile.currentAddress?.streetName}, {selectedProfile.currentAddress?.city},{' '}
+                {selectedProfile.currentAddress?.state}
+              </p>
               <p><strong>About:</strong> {selectedProfile.aboutMe}</p>
+              <p><strong>Status:</strong> {selectedProfile.approvalStatus}</p>
 
               <button style={primaryBtn} onClick={() => setProfileMode('edit')}>Edit Profile</button>
               <button style={secondaryBtn} onClick={() => setSelectedProfile(null)}>Close</button>
             </div>
           ) : (
             <div>
-              <input name="gender" value={profileForm.gender} onChange={handleProfileFormChange} placeholder="Gender" style={inputStyle} />
-              <input name="dateOfBirth" value={profileForm.dateOfBirth} onChange={handleProfileFormChange} type="date" style={inputStyle} />
-              <input name="heightFeet" value={profileForm.heightFeet} onChange={handleProfileFormChange} placeholder="Height Feet" style={inputStyle} />
-              <input name="heightInches" value={profileForm.heightInches} onChange={handleProfileFormChange} placeholder="Height Inches" style={inputStyle} />
-              <input name="religion" value={profileForm.religion} onChange={handleProfileFormChange} placeholder="Religion" style={inputStyle} />
-              <input name="subCaste" value={profileForm.subCaste} onChange={handleProfileFormChange} placeholder="Sub Caste" style={inputStyle} />
-              <input name="siblingsCount" value={profileForm.siblingsCount} onChange={handleProfileFormChange} placeholder="Siblings Count" style={inputStyle} />
-              <input name="maritalStatus" value={profileForm.maritalStatus} onChange={handleProfileFormChange} placeholder="Marital Status" style={inputStyle} />
-              <input name="fatherName" value={profileForm.fatherName} onChange={handleProfileFormChange} placeholder="Father Name" style={inputStyle} />
-              <input name="fatherOccupation" value={profileForm.fatherOccupation} onChange={handleProfileFormChange} placeholder="Father Occupation" style={inputStyle} />
-              <input name="motherName" value={profileForm.motherName} onChange={handleProfileFormChange} placeholder="Mother Name" style={inputStyle} />
-              <input name="motherOccupation" value={profileForm.motherOccupation} onChange={handleProfileFormChange} placeholder="Mother Occupation" style={inputStyle} />
-              <input name="highestEducation" value={profileForm.highestEducation} onChange={handleProfileFormChange} placeholder="Highest Education" style={inputStyle} />
-              <input name="fieldOfStudy" value={profileForm.fieldOfStudy} onChange={handleProfileFormChange} placeholder="Field Of Study" style={inputStyle} />
-              <input name="college" value={profileForm.college} onChange={handleProfileFormChange} placeholder="College" style={inputStyle} />
-              <input name="occupation" value={profileForm.occupation} onChange={handleProfileFormChange} placeholder="Occupation" style={inputStyle} />
-              <input name="employmentType" value={profileForm.employmentType} onChange={handleProfileFormChange} placeholder="Employment Type" style={inputStyle} />
-              <input name="companyName" value={profileForm.companyName} onChange={handleProfileFormChange} placeholder="Company Name" style={inputStyle} />
-              <input name="jobTitle" value={profileForm.jobTitle} onChange={handleProfileFormChange} placeholder="Job Title" style={inputStyle} />
-              <input name="jobLocation" value={profileForm.jobLocation} onChange={handleProfileFormChange} placeholder="Job Location" style={inputStyle} />
-              <input name="industry" value={profileForm.industry} onChange={handleProfileFormChange} placeholder="Industry" style={inputStyle} />
-              <input name="income" value={profileForm.income} onChange={handleProfileFormChange} placeholder="Income" style={inputStyle} />
-              <input name="streetName" value={profileForm.streetName} onChange={handleProfileFormChange} placeholder="Street Name" style={inputStyle} />
-              <input name="city" value={profileForm.city} onChange={handleProfileFormChange} placeholder="City" style={inputStyle} />
-              <input name="state" value={profileForm.state} onChange={handleProfileFormChange} placeholder="State" style={inputStyle} />
-              <input name="country" value={profileForm.country} onChange={handleProfileFormChange} placeholder="Country" style={inputStyle} />
-              <input name="pinCode" value={profileForm.pinCode} onChange={handleProfileFormChange} placeholder="Pin Code" style={inputStyle} />
-              <textarea name="aboutMe" value={profileForm.aboutMe} onChange={handleProfileFormChange} placeholder="About Me" style={inputStyle} rows="4" />
+              <div style={formGridStyle}>
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Gender</label>
+                  <select name="gender" value={profileForm.gender} onChange={handleProfileFormChange} style={inputStyle}>
+                    <option value="">Select Gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                  </select>
+                </div>
 
-              <button type="button" style={primaryBtn} onClick={saveProfile} disabled={saving}>
-                {saving ? 'Saving...' : profileMode === 'create' ? 'Create Profile' : 'Save Profile'}
-              </button>
-              <button type="button" style={secondaryBtn} onClick={() => setSelectedProfile(null)}>
-                Cancel
-              </button>
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Date of Birth</label>
+                  <input
+                    name="dateOfBirth"
+                    type="date"
+                    value={profileForm.dateOfBirth}
+                    onChange={handleProfileFormChange}
+                    style={inputStyle}
+                  />
+                </div>
+
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Height Feet</label>
+                  <input name="heightFeet" value={profileForm.heightFeet} onChange={handleProfileFormChange} style={inputStyle} />
+                </div>
+
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Height Inches</label>
+                  <input name="heightInches" value={profileForm.heightInches} onChange={handleProfileFormChange} style={inputStyle} />
+                </div>
+
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Religion</label>
+                  <select name="religion" value={profileForm.religion} onChange={handleProfileFormChange} style={inputStyle}>
+                    <option value="">Select Religion</option>
+                    <option value="Christian">Christian</option>
+                    <option value="Hindu">Hindu</option>
+                    <option value="Ambedkarist">Ambedkarist</option>
+                    <option value="Buddhist">Buddhist</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Sub Caste</label>
+                  <select name="subCaste" value={profileForm.subCaste} onChange={handleProfileFormChange} style={inputStyle}>
+                    <option value="">Select Sub Caste</option>
+                    <option value="SC">SC</option>
+                    <option value="BC">BC</option>
+                    <option value="OC">OC</option>
+                    <option value="NA">NA</option>
+                  </select>
+                </div>
+
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Siblings Count</label>
+                  <input name="siblingsCount" value={profileForm.siblingsCount} onChange={handleProfileFormChange} style={inputStyle} />
+                </div>
+
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Marital Status</label>
+                  <select name="maritalStatus" value={profileForm.maritalStatus} onChange={handleProfileFormChange} style={inputStyle}>
+                    <option value="">Select Marital Status</option>
+                    <option value="Never married">Never married</option>
+                    <option value="Divorced">Divorced</option>
+                    <option value="Widowed">Widowed</option>
+                    <option value="Awaiting Divorce">Awaiting Divorce</option>
+                  </select>
+                </div>
+
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Father Name</label>
+                  <input name="fatherName" value={profileForm.fatherName} onChange={handleProfileFormChange} style={inputStyle} />
+                </div>
+
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Father Occupation</label>
+                  <input name="fatherOccupation" value={profileForm.fatherOccupation} onChange={handleProfileFormChange} style={inputStyle} />
+                </div>
+
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Mother Name</label>
+                  <input name="motherName" value={profileForm.motherName} onChange={handleProfileFormChange} style={inputStyle} />
+                </div>
+
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Mother Occupation</label>
+                  <input name="motherOccupation" value={profileForm.motherOccupation} onChange={handleProfileFormChange} style={inputStyle} />
+                </div>
+
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Highest Education</label>
+                  <select name="highestEducation" value={profileForm.highestEducation} onChange={handleProfileFormChange} style={inputStyle}>
+                    <option value="">Select Education</option>
+                    <option value="10th Pass">10th Pass</option>
+                    <option value="12th Pass">12th Pass</option>
+                    <option value="Diploma">Diploma</option>
+                    <option value="ITI">ITI</option>
+                    <option value="B.A">B.A</option>
+                    <option value="B.Sc">B.Sc</option>
+                    <option value="B.Com">B.Com</option>
+                    <option value="B.Tech">B.Tech</option>
+                    <option value="M.A">M.A</option>
+                    <option value="M.Sc">M.Sc</option>
+                    <option value="M.Com">M.Com</option>
+                    <option value="M.Tech">M.Tech</option>
+                    <option value="MBA">MBA</option>
+                    <option value="MCA">MCA</option>
+                    <option value="MBBS">MBBS</option>
+                    <option value="BDS">BDS</option>
+                    <option value="MD">MD</option>
+                    <option value="MS">MS</option>
+                    <option value="PhD">PhD</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Field of Study</label>
+                  <input name="fieldOfStudy" value={profileForm.fieldOfStudy} onChange={handleProfileFormChange} style={inputStyle} />
+                </div>
+
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>College</label>
+                  <input name="college" value={profileForm.college} onChange={handleProfileFormChange} style={inputStyle} />
+                </div>
+
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Occupation</label>
+                  <input name="occupation" value={profileForm.occupation} onChange={handleProfileFormChange} style={inputStyle} />
+                </div>
+
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Employment Type</label>
+                  <select name="employmentType" value={profileForm.employmentType} onChange={handleProfileFormChange} style={inputStyle}>
+                    <option value="">Select Employment Type</option>
+                    <option value="private">Private</option>
+                    <option value="public">Public</option>
+                    <option value="govt">Govt</option>
+                    <option value="business">Business</option>
+                    <option value="self-employed">Self-employed</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Company Name</label>
+                  <input name="companyName" value={profileForm.companyName} onChange={handleProfileFormChange} style={inputStyle} />
+                </div>
+
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Job Title</label>
+                  <input name="jobTitle" value={profileForm.jobTitle} onChange={handleProfileFormChange} style={inputStyle} />
+                </div>
+
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Job Location</label>
+                  <input name="jobLocation" value={profileForm.jobLocation} onChange={handleProfileFormChange} style={inputStyle} />
+                </div>
+
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Industry</label>
+                  <input name="industry" value={profileForm.industry} onChange={handleProfileFormChange} style={inputStyle} />
+                </div>
+
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Income</label>
+                  <input name="income" value={profileForm.income} onChange={handleProfileFormChange} style={inputStyle} />
+                </div>
+
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Street Name</label>
+                  <input name="streetName" value={profileForm.streetName} onChange={handleProfileFormChange} style={inputStyle} />
+                </div>
+
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>City</label>
+                  <input name="city" value={profileForm.city} onChange={handleProfileFormChange} style={inputStyle} />
+                </div>
+
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>State</label>
+                  <input name="state" value={profileForm.state} onChange={handleProfileFormChange} style={inputStyle} />
+                </div>
+
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Country</label>
+                  <input name="country" value={profileForm.country} onChange={handleProfileFormChange} style={inputStyle} />
+                </div>
+
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Pin Code</label>
+                  <input name="pinCode" value={profileForm.pinCode} onChange={handleProfileFormChange} style={inputStyle} />
+                </div>
+
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>About Me</label>
+                  <textarea name="aboutMe" value={profileForm.aboutMe} onChange={handleProfileFormChange} style={inputStyle} rows="4" />
+                </div>
+
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Approval Status</label>
+                  <select name="approvalStatus" value={profileForm.approvalStatus} onChange={handleProfileFormChange} style={inputStyle}>
+                    <option value="approved">Approved</option>
+                    <option value="pending">Pending</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="deleted">Deleted</option>
+                  </select>
+                </div>
+
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Show In Search</label>
+                  <select
+                    name="showInSearch"
+                    value={profileForm.showInSearch ? 'true' : 'false'}
+                    onChange={(e) =>
+                      setProfileForm((prev) => ({
+                        ...prev,
+                        showInSearch: e.target.value === 'true'
+                      }))
+                    }
+                    style={inputStyle}
+                  >
+                    <option value="true">Yes</option>
+                    <option value="false">No</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ marginTop: '20px' }}>
+                <button type="button" style={primaryBtn} onClick={saveProfile} disabled={saving}>
+                  {saving ? 'Saving...' : profileMode === 'create' ? 'Create Profile' : 'Save Profile'}
+                </button>
+                <button type="button" style={secondaryBtn} onClick={() => setSelectedProfile(null)}>
+                  Cancel
+                </button>
+              </div>
             </div>
           )}
         </div>
