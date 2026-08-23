@@ -81,9 +81,11 @@ const familyStatusOptions = [
 ];
 
 const familyValuesOptions = [
-  'orthodox',
-  'moderate',
-  'liberal'
+  'rich',
+  'middle',
+  'lower',
+  'other',
+  'orthodox'
 ];
 
 const inputStyle = {
@@ -243,8 +245,8 @@ const Profile = () => {
       siblingsCount: Number(form.siblingsCount || 0),
       maritalStatus: form.maritalStatus,
       haveChildren: form.haveChildren === 'Yes',
-      familyStatus: form.familyStatus || null,
-      familyValues: form.familyValues || null,
+      familyStatus: form.familyStatus || '',
+      familyValues: form.familyValues || '',
       fatherName: form.fatherName,
       fatherOccupation: form.fatherOccupation,
       motherName: form.motherName,
@@ -517,10 +519,10 @@ const Profile = () => {
             <label>Marital status</label>
             <select name="maritalStatus" value={form.maritalStatus} onChange={handleChange} style={inputStyle} required>
               <option value="">Select</option>
-              <option value="Never married">Never married</option>
-              <option value="Divorced">Divorced</option>
-              <option value="Widowed">Widowed</option>
-              <option value="Awaiting Divorce">Awaiting Divorce</option>
+              <option value="Nevermarried">Never married</option>
+<option value="Divorced">Divorced</option>
+<option value="Widowed">Widowed</option>
+<option value="AwaitingDivorce">Awaiting Divorce</option>
             </select>
 
             <label>Have Children</label>
