@@ -73,19 +73,50 @@ const educationOptions = [
   'Other'
 ];
 
+const maritalStatusOptions = [
+  { label: 'Never married', value: 'Nevermarried' },
+  { label: 'Divorced', value: 'Divorced' },
+  { label: 'Widowed', value: 'Widowed' },
+  { label: 'Awaiting Divorce', value: 'AwaitingDivorce' }
+];
+
 const familyStatusOptions = [
-  'nuclear_family',
-  'joint_family',
-  'single_parent',
-  'extended_family'
+  { label: 'Nuclear family', value: 'nuclear_family' },
+  { label: 'Joint family', value: 'joint_family' },
+  { label: 'Single parent', value: 'single_parent' },
+  { label: 'Extended family', value: 'extended_family' }
 ];
 
 const familyValuesOptions = [
-  'rich',
-  'middle',
-  'lower',
-  'other',
-  'orthodox'
+  { label: 'Rich', value: 'rich' },
+  { label: 'Middle', value: 'middle' },
+  { label: 'Lower', value: 'lower' },
+  { label: 'Other', value: 'other' },
+  { label: 'Orthodox', value: 'orthodox' }
+];
+
+const religionOptions = [
+  { label: 'Christian', value: 'Christian' },
+  { label: 'Hindu', value: 'Hindu' },
+  { label: 'Ambedkarist', value: 'Ambedkarist' },
+  { label: 'Buddhist', value: 'Buddhist' },
+  { label: 'Other', value: 'Other' }
+];
+
+const subCasteOptions = [
+  { label: 'SC', value: 'SC' },
+  { label: 'BC', value: 'BC' },
+  { label: 'OC', value: 'OC' },
+  { label: 'NA', value: 'NA' }
+];
+
+const employmentTypeOptions = [
+  { label: 'Private', value: 'private' },
+  { label: 'Public', value: 'public' },
+  { label: 'Govt', value: 'govt' },
+  { label: 'Business', value: 'business' },
+  { label: 'Self Employed', value: 'self-employed' },
+  { label: 'Other', value: 'other' }
 ];
 
 const inputStyle = {
@@ -125,6 +156,11 @@ const readOnlyStyle = {
   cursor: 'not-allowed'
 };
 
+const errorFieldStyle = {
+  ...inputStyle,
+  border: '1px solid red'
+};
+
 function calculateAge(dob) {
   if (!dob) return null;
   const birth = new Date(dob);
@@ -142,8 +178,9 @@ const Profile = () => {
   const [loading,setLoading] = useState(true);
   const [saving,setSaving] = useState(false);
   const [error,setError] = useState('');
+  const [fieldErrors,setFieldErrors] = useState({});
   const [profile,setProfile] = useState(null);
-  const [mode,setMode] = useState('view'); // view | edit
+  const [mode,setMode] = useState('view');
   const [form,setForm] = useState(initialForm);
 
   const age = useMemo(() => calculateAge(form.dateOfBirth), [form.dateOfBirth]);
@@ -224,11 +261,60 @@ const Profile = () => {
       ...prev,
       [name]: value
     }));
+
+    setFieldErrors((prev) => ({
+      ...prev,
+      [name]: ''
+    }));
+  };
+
+  const mapServerErrors = (data) => {
+    const mapped = {};
+
+    if (Array.isArray(data?.details)) {
+      data.details.forEach((item) => {
+        if (typeof item === 'string') {
+          const msg = item.toLowerCase();
+
+          if (msg.includes('marital')) mapped.maritalStatus = item;
+          else if (msg.includes('family status')) mapped.familyStatus = item;
+          else if (msg.includes('family values')) mapped.familyValues = item;
+          else if (msg.includes('religion')) mapped.religion = item;
+          else if (msg.includes('sub caste') || msg.includes('subcaste')) mapped.subCaste = item;
+          else if (msg.includes('gender')) mapped.gender = item;
+          else if (msg.includes('father name')) mapped.fatherName = item;
+          else if (msg.includes('father occupation')) mapped.fatherOccupation = item;
+          else if (msg.includes('mother name')) mapped.motherName = item;
+          else if (msg.includes('mother occupation')) mapped.motherOccupation = item;
+          else if (msg.includes('highest education')) mapped.highestEducation = item;
+          else if (msg.includes('field of study')) mapped.fieldOfStudy = item;
+          else if (msg.includes('college')) mapped.college = item;
+          else if (msg.includes('occupation')) mapped.occupation = item;
+          else if (msg.includes('employment type')) mapped.employmentType = item;
+          else if (msg.includes('company name')) mapped.companyName = item;
+          else if (msg.includes('job title')) mapped.jobTitle = item;
+          else if (msg.includes('job location')) mapped.jobLocation = item;
+          else if (msg.includes('industry')) mapped.industry = item;
+          else if (msg.includes('income')) mapped.income = item;
+          else if (msg.includes('street name')) mapped.streetName = item;
+          else if (msg.includes('city')) mapped.city = item;
+          else if (msg.includes('state')) mapped.state = item;
+          else if (msg.includes('country')) mapped.country = item;
+          else if (msg.includes('pin code')) mapped.pinCode = item;
+          else if (msg.includes('about me')) mapped.aboutMe = item;
+        } else if (item?.field) {
+          mapped[item.field] = item.message;
+        }
+      });
+    }
+
+    return mapped;
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
     setError('');
+    setFieldErrors({});
 
     if (!age || age < 18) {
       setError('You must be at least 18 years old.');
@@ -292,8 +378,12 @@ const Profile = () => {
       setProfile(res.data.profile);
       setMode('view');
       setError('');
+      setFieldErrors({});
     } catch (err) {
-      setError(err.response?.data?.message || err.response?.data?.error || 'Failed to save profile');
+      const data = err.response?.data;
+
+      setError(data?.message || data?.error || 'Failed to save profile');
+      setFieldErrors(mapServerErrors(data));
     } finally {
       setSaving(false);
     }
@@ -308,6 +398,10 @@ const Profile = () => {
   }
 
   const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
+
+  const getStyle = (fieldName) => (
+    fieldErrors[fieldName] ? errorFieldStyle : inputStyle
+  );
 
   return (
     <div style={{ maxWidth: '950px', margin: '40px auto', padding: '20px' }}>
@@ -326,7 +420,9 @@ const Profile = () => {
           {error}
         </div>
       )}
-<p><strong>Profile ID:</strong> {profile?.profileId || '-'}</p>
+
+      <p><strong>Profile ID:</strong> {profile?.profileId || '-'}</p>
+
       <div style={sectionStyle}>
         <p><strong>Full Name:</strong> {fullName || '-'}</p>
         <p><strong>Surname:</strong> {user?.surname || '-'}</p>
@@ -447,11 +543,18 @@ const Profile = () => {
             <h3>Basic Details</h3>
 
             <label>Gender</label>
-            <select name="gender" value={form.gender} onChange={handleChange} style={inputStyle} required>
+            <select
+              name="gender"
+              value={form.gender}
+              onChange={handleChange}
+              style={getStyle('gender')}
+              required
+            >
               <option value="">Select</option>
               <option value="male">Male</option>
               <option value="female">Female</option>
             </select>
+            {fieldErrors.gender && <div style={{ color: 'red', marginTop: '-10px', marginBottom: '10px' }}>{fieldErrors.gender}</div>}
 
             <label>DOB</label>
             <input
@@ -459,52 +562,82 @@ const Profile = () => {
               name="dateOfBirth"
               value={form.dateOfBirth}
               onChange={handleChange}
-              style={inputStyle}
+              style={getStyle('dateOfBirth')}
               required
             />
+            {fieldErrors.dateOfBirth && <div style={{ color: 'red', marginTop: '-10px', marginBottom: '10px' }}>{fieldErrors.dateOfBirth}</div>}
 
             <label>Height</label>
             <div style={{ display: 'flex', gap: '10px' }}>
-              <select name="heightFeet" value={form.heightFeet} onChange={handleChange} style={inputStyle} required>
+              <select
+                name="heightFeet"
+                value={form.heightFeet}
+                onChange={handleChange}
+                style={getStyle('heightFeet')}
+                required
+              >
                 <option value="">Feet</option>
                 {[4,5,6,7].map((n) => (
                   <option key={n} value={n}>{n} ft</option>
                 ))}
               </select>
 
-              <select name="heightInches" value={form.heightInches} onChange={handleChange} style={inputStyle} required>
+              <select
+                name="heightInches"
+                value={form.heightInches}
+                onChange={handleChange}
+                style={getStyle('heightInches')}
+                required
+              >
                 <option value="">Inches</option>
                 {[0,1,2,3,4,5,6,7,8,9,10,11].map((n) => (
                   <option key={n} value={n}>{n} in</option>
                 ))}
               </select>
             </div>
+            {fieldErrors.heightFeet && <div style={{ color: 'red', marginTop: '-10px', marginBottom: '10px' }}>{fieldErrors.heightFeet}</div>}
+            {fieldErrors.heightInches && <div style={{ color: 'red', marginTop: '-10px', marginBottom: '10px' }}>{fieldErrors.heightInches}</div>}
           </div>
 
           <div style={sectionStyle}>
             <h3>Religion & Family</h3>
 
             <label>Religion</label>
-            <select name="religion" value={form.religion} onChange={handleChange} style={inputStyle} required>
+            <select
+              name="religion"
+              value={form.religion}
+              onChange={handleChange}
+              style={getStyle('religion')}
+              required
+            >
               <option value="">Select</option>
-              <option value="Christian">Christian</option>
-              <option value="Hindu">Hindu</option>
-              <option value="Ambedkarist">Ambedkarist</option>
-              <option value="Buddhist">Buddhist</option>
-              <option value="Other">Other</option>
+              {religionOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
             </select>
+            {fieldErrors.religion && <div style={{ color: 'red', marginTop: '-10px', marginBottom: '10px' }}>{fieldErrors.religion}</div>}
 
             <label>Caste</label>
             <input value="Mala" readOnly style={readOnlyStyle} />
 
             <label>Sub Caste</label>
-            <select name="subCaste" value={form.subCaste} onChange={handleChange} style={inputStyle} required>
+            <select
+              name="subCaste"
+              value={form.subCaste}
+              onChange={handleChange}
+              style={getStyle('subCaste')}
+              required
+            >
               <option value="">Select</option>
-              <option value="SC">SC</option>
-              <option value="BC">BC</option>
-              <option value="OC">OC</option>
-              <option value="NA">NA</option>
+              {subCasteOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
             </select>
+            {fieldErrors.subCaste && <div style={{ color: 'red', marginTop: '-10px', marginBottom: '10px' }}>{fieldErrors.subCaste}</div>}
 
             <label>No. of siblings</label>
             <input
@@ -512,52 +645,110 @@ const Profile = () => {
               name="siblingsCount"
               value={form.siblingsCount}
               onChange={handleChange}
-              style={inputStyle}
+              style={getStyle('siblingsCount')}
               required
             />
+            {fieldErrors.siblingsCount && <div style={{ color: 'red', marginTop: '-10px', marginBottom: '10px' }}>{fieldErrors.siblingsCount}</div>}
 
             <label>Marital status</label>
-            <select name="maritalStatus" value={form.maritalStatus} onChange={handleChange} style={inputStyle} required>
+            <select
+              name="maritalStatus"
+              value={form.maritalStatus}
+              onChange={handleChange}
+              style={getStyle('maritalStatus')}
+              required
+            >
               <option value="">Select</option>
-              <option value="Nevermarried">Never married</option>
-<option value="Divorced">Divorced</option>
-<option value="Widowed">Widowed</option>
-<option value="AwaitingDivorce">Awaiting Divorce</option>
+              {maritalStatusOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
             </select>
+            {fieldErrors.maritalStatus && <div style={{ color: 'red', marginTop: '-10px', marginBottom: '10px' }}>{fieldErrors.maritalStatus}</div>}
 
             <label>Have Children</label>
-            <select name="haveChildren" value={form.haveChildren} onChange={handleChange} style={inputStyle}>
+            <select
+              name="haveChildren"
+              value={form.haveChildren}
+              onChange={handleChange}
+              style={inputStyle}
+            >
               <option value="No">No</option>
               <option value="Yes">Yes</option>
             </select>
 
             <label>Family Status</label>
-            <select name="familyStatus" value={form.familyStatus} onChange={handleChange} style={inputStyle}>
+            <select
+              name="familyStatus"
+              value={form.familyStatus}
+              onChange={handleChange}
+              style={getStyle('familyStatus')}
+            >
               <option value="">Select</option>
-              {familyStatusOptions.map((v) => (
-                <option key={v} value={v}>{v}</option>
+              {familyStatusOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
               ))}
             </select>
+            {fieldErrors.familyStatus && <div style={{ color: 'red', marginTop: '-10px', marginBottom: '10px' }}>{fieldErrors.familyStatus}</div>}
 
             <label>Family Values</label>
-            <select name="familyValues" value={form.familyValues} onChange={handleChange} style={inputStyle}>
+            <select
+              name="familyValues"
+              value={form.familyValues}
+              onChange={handleChange}
+              style={getStyle('familyValues')}
+            >
               <option value="">Select</option>
-              {familyValuesOptions.map((v) => (
-                <option key={v} value={v}>{v}</option>
+              {familyValuesOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
               ))}
             </select>
+            {fieldErrors.familyValues && <div style={{ color: 'red', marginTop: '-10px', marginBottom: '10px' }}>{fieldErrors.familyValues}</div>}
 
             <label>Father’s Name</label>
-            <input name="fatherName" value={form.fatherName} onChange={handleChange} style={inputStyle} required />
+            <input
+              name="fatherName"
+              value={form.fatherName}
+              onChange={handleChange}
+              style={getStyle('fatherName')}
+              required
+            />
+            {fieldErrors.fatherName && <div style={{ color: 'red', marginTop: '-10px', marginBottom: '10px' }}>{fieldErrors.fatherName}</div>}
 
             <label>Father Occupation</label>
-            <input name="fatherOccupation" value={form.fatherOccupation} onChange={handleChange} style={inputStyle} required />
+            <input
+              name="fatherOccupation"
+              value={form.fatherOccupation}
+              onChange={handleChange}
+              style={getStyle('fatherOccupation')}
+              required
+            />
+            {fieldErrors.fatherOccupation && <div style={{ color: 'red', marginTop: '-10px', marginBottom: '10px' }}>{fieldErrors.fatherOccupation}</div>}
 
             <label>Mother’s Name</label>
-            <input name="motherName" value={form.motherName} onChange={handleChange} style={inputStyle} required />
+            <input
+              name="motherName"
+              value={form.motherName}
+              onChange={handleChange}
+              style={getStyle('motherName')}
+              required
+            />
+            {fieldErrors.motherName && <div style={{ color: 'red', marginTop: '-10px', marginBottom: '10px' }}>{fieldErrors.motherName}</div>}
 
             <label>Mother Occupation</label>
-            <input name="motherOccupation" value={form.motherOccupation} onChange={handleChange} style={inputStyle} required />
+            <input
+              name="motherOccupation"
+              value={form.motherOccupation}
+              onChange={handleChange}
+              style={getStyle('motherOccupation')}
+              required
+            />
+            {fieldErrors.motherOccupation && <div style={{ color: 'red', marginTop: '-10px', marginBottom: '10px' }}>{fieldErrors.motherOccupation}</div>}
           </div>
 
           <div style={sectionStyle}>
@@ -568,7 +759,7 @@ const Profile = () => {
               name="highestEducation"
               value={form.highestEducation}
               onChange={handleChange}
-              style={inputStyle}
+              style={getStyle('highestEducation')}
               required
             >
               <option value="">Select</option>
@@ -576,41 +767,105 @@ const Profile = () => {
                 <option key={opt} value={opt}>{opt}</option>
               ))}
             </select>
+            {fieldErrors.highestEducation && <div style={{ color: 'red', marginTop: '-10px', marginBottom: '10px' }}>{fieldErrors.highestEducation}</div>}
 
             <label>Field of Study / Specialization</label>
-            <input name="fieldOfStudy" value={form.fieldOfStudy} onChange={handleChange} style={inputStyle} required />
+            <input
+              name="fieldOfStudy"
+              value={form.fieldOfStudy}
+              onChange={handleChange}
+              style={getStyle('fieldOfStudy')}
+              required
+            />
+            {fieldErrors.fieldOfStudy && <div style={{ color: 'red', marginTop: '-10px', marginBottom: '10px' }}>{fieldErrors.fieldOfStudy}</div>}
 
             <label>College</label>
-            <input name="college" value={form.college} onChange={handleChange} style={inputStyle} required />
+            <input
+              name="college"
+              value={form.college}
+              onChange={handleChange}
+              style={getStyle('college')}
+              required
+            />
+            {fieldErrors.college && <div style={{ color: 'red', marginTop: '-10px', marginBottom: '10px' }}>{fieldErrors.college}</div>}
 
             <label>Occupation</label>
-            <input name="occupation" value={form.occupation} onChange={handleChange} style={inputStyle} required />
+            <input
+              name="occupation"
+              value={form.occupation}
+              onChange={handleChange}
+              style={getStyle('occupation')}
+              required
+            />
+            {fieldErrors.occupation && <div style={{ color: 'red', marginTop: '-10px', marginBottom: '10px' }}>{fieldErrors.occupation}</div>}
 
             <label>Employment Type</label>
-            <select name="employmentType" value={form.employmentType} onChange={handleChange} style={inputStyle} required>
+            <select
+              name="employmentType"
+              value={form.employmentType}
+              onChange={handleChange}
+              style={getStyle('employmentType')}
+              required
+            >
               <option value="">Select</option>
-              <option value="private">Private</option>
-              <option value="public">Public</option>
-              <option value="govt">Govt</option>
-              <option value="business">Business</option>
-              <option value="self-employed">Self Employed</option>
-              <option value="other">Other</option>
+              {employmentTypeOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
             </select>
+            {fieldErrors.employmentType && <div style={{ color: 'red', marginTop: '-10px', marginBottom: '10px' }}>{fieldErrors.employmentType}</div>}
 
             <label>Company Name</label>
-            <input name="companyName" value={form.companyName} onChange={handleChange} style={inputStyle} required />
+            <input
+              name="companyName"
+              value={form.companyName}
+              onChange={handleChange}
+              style={getStyle('companyName')}
+              required
+            />
+            {fieldErrors.companyName && <div style={{ color: 'red', marginTop: '-10px', marginBottom: '10px' }}>{fieldErrors.companyName}</div>}
 
             <label>Job Title</label>
-            <input name="jobTitle" value={form.jobTitle} onChange={handleChange} style={inputStyle} required />
+            <input
+              name="jobTitle"
+              value={form.jobTitle}
+              onChange={handleChange}
+              style={getStyle('jobTitle')}
+              required
+            />
+            {fieldErrors.jobTitle && <div style={{ color: 'red', marginTop: '-10px', marginBottom: '10px' }}>{fieldErrors.jobTitle}</div>}
 
             <label>Job Location</label>
-            <input name="jobLocation" value={form.jobLocation} onChange={handleChange} style={inputStyle} required />
+            <input
+              name="jobLocation"
+              value={form.jobLocation}
+              onChange={handleChange}
+              style={getStyle('jobLocation')}
+              required
+            />
+            {fieldErrors.jobLocation && <div style={{ color: 'red', marginTop: '-10px', marginBottom: '10px' }}>{fieldErrors.jobLocation}</div>}
 
             <label>Industry</label>
-            <input name="industry" value={form.industry} onChange={handleChange} style={inputStyle} required />
+            <input
+              name="industry"
+              value={form.industry}
+              onChange={handleChange}
+              style={getStyle('industry')}
+              required
+            />
+            {fieldErrors.industry && <div style={{ color: 'red', marginTop: '-10px', marginBottom: '10px' }}>{fieldErrors.industry}</div>}
 
             <label>Income</label>
-            <input type="number" name="income" value={form.income} onChange={handleChange} style={inputStyle} required />
+            <input
+              type="number"
+              name="income"
+              value={form.income}
+              onChange={handleChange}
+              style={getStyle('income')}
+              required
+            />
+            {fieldErrors.income && <div style={{ color: 'red', marginTop: '-10px', marginBottom: '10px' }}>{fieldErrors.income}</div>}
 
             <label>Income Currency</label>
             <input value="INR" readOnly style={readOnlyStyle} />
@@ -624,25 +879,27 @@ const Profile = () => {
               name="streetName"
               value={form.streetName}
               onChange={handleChange}
-              style={inputStyle}
+              style={getStyle('streetName')}
               required
             />
+            {fieldErrors.streetName && <div style={{ color: 'red', marginTop: '-10px', marginBottom: '10px' }}>{fieldErrors.streetName}</div>}
 
             <label>City</label>
             <input
               name="city"
               value={form.city}
               onChange={handleChange}
-              style={inputStyle}
+              style={getStyle('city')}
               required
             />
+            {fieldErrors.city && <div style={{ color: 'red', marginTop: '-10px', marginBottom: '10px' }}>{fieldErrors.city}</div>}
 
             <label>State</label>
             <select
               name="state"
               value={form.state}
               onChange={handleChange}
-              style={inputStyle}
+              style={getStyle('state')}
               required
             >
               <option value="">Select State</option>
@@ -650,24 +907,27 @@ const Profile = () => {
                 <option key={s} value={s}>{s}</option>
               ))}
             </select>
+            {fieldErrors.state && <div style={{ color: 'red', marginTop: '-10px', marginBottom: '10px' }}>{fieldErrors.state}</div>}
 
             <label>Country</label>
             <input
               name="country"
               value={form.country}
               onChange={handleChange}
-              style={inputStyle}
+              style={getStyle('country')}
               required
             />
+            {fieldErrors.country && <div style={{ color: 'red', marginTop: '-10px', marginBottom: '10px' }}>{fieldErrors.country}</div>}
 
             <label>Pin Code</label>
             <input
               name="pinCode"
               value={form.pinCode}
               onChange={handleChange}
-              style={inputStyle}
+              style={getStyle('pinCode')}
               required
             />
+            {fieldErrors.pinCode && <div style={{ color: 'red', marginTop: '-10px', marginBottom: '10px' }}>{fieldErrors.pinCode}</div>}
           </div>
 
           <div style={sectionStyle}>
@@ -682,12 +942,18 @@ const Profile = () => {
               value={form.aboutMe}
               onChange={handleChange}
               rows="5"
-              style={inputStyle}
+              style={getStyle('aboutMe')}
               required
             />
+            {fieldErrors.aboutMe && <div style={{ color: 'red', marginTop: '-10px', marginBottom: '10px' }}>{fieldErrors.aboutMe}</div>}
 
             <label>Preferred Match</label>
-            <select name="preferredMatch" value={form.preferredMatch} onChange={handleChange} style={inputStyle}>
+            <select
+              name="preferredMatch"
+              value={form.preferredMatch}
+              onChange={handleChange}
+              style={inputStyle}
+            >
               <option value="same_religion">Same Religion</option>
               <option value="any_religion">Any Religion</option>
               <option value="open">Open</option>
