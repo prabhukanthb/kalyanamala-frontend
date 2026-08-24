@@ -1,0 +1,86 @@
+import React, { useContext, useEffect, useState } from 'react';
+import axios from 'axios';
+import { useNavigate, useParams } from 'react-router-dom';
+import { AuthContext } from '../../context/AuthContext';
+
+const API_BASE = 'https://kalyanamala-backend-production.up.railway.app';
+
+const EditUser = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { token } = useContext(AuthContext);
+
+  const [loading,setLoading] = useState(true);
+  const [saving,setSaving] = useState(false);
+  const [form,setForm] = useState({
+    firstName: '',
+    lastName: '',
+    surname: '',
+    phone: '',
+    role: '',
+    status: ''
+  });
+  const [error,setError] = useState('');
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/api/users/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        const u = res.data.user;
+        setForm({
+          firstName: u.firstName || '',
+          lastName: u.lastName || '',
+          surname: u.surname || '',
+          phone: u.phone || '',
+          role: u.role || '',
+          status: u.status || ''
+        });
+      } catch (err) {
+        setError(err.response?.data?.message || 'Failed to load user');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUser();
+  }, [id,token]);
+
+  const handleChange = (e) => {
+    setForm((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setError('');
+
+    try {
+      await axios.put(`${API_BASE}/api/users/${id}`, form, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      navigate('/admin');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to save user');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return <div style={{ padding: '30px' }}>Loading user...</div>;
+
+  return (
+    <div style={{ maxWidth: '700px', margin: '30px auto', padding: '20px' }}>
+      <h2>Edit User</h2>
+
+      {error && <div style={{ color: 'red', marginBottom: '15px' }}>{error}</div>}
+
+      <form onSubmit={handleSave}>
+        <input name="firstName" value={form.firstName} onChange={handleChange} placeholder="First Name" style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
+        <input name="lastName" value={form.lastName} onChange={handleChange} placeholder="Last Name" style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
+        <input name="surname" value={form.surname} onChange
