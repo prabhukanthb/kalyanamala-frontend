@@ -15,6 +15,8 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
 import AdminDashboard from './pages/AdminDashboard';
+import EditUser from './pages/admin/EditUser';
+import EditProfile from './pages/admin/EditProfile';
 
 const NavBar = () => {
   const { isAuthenticated, logout, user } = useContext(AuthContext);
@@ -109,15 +111,35 @@ function AppContent() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+
         <Route
           path="/profile"
           element={isAuthenticated ? <Profile /> : <Navigate to="/login" replace />}
         />
+
         <Route
           path="/admin"
           element={
             isAuthenticated && (user?.role === 'admin' || user?.role === 'subadmin')
               ? <AdminDashboard />
+              : <Navigate to="/" replace />
+          }
+        />
+
+        <Route
+          path="/admin/users/:id/edit"
+          element={
+            isAuthenticated && (user?.role === 'admin' || user?.role === 'subadmin')
+              ? <EditUser />
+              : <Navigate to="/" replace />
+          }
+        />
+
+        <Route
+          path="/admin/profiles/:id/edit"
+          element={
+            isAuthenticated && (user?.role === 'admin' || user?.role === 'subadmin')
+              ? <EditProfile />
               : <Navigate to="/" replace />
           }
         />
