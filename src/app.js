@@ -15,7 +15,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
 import AdminDashboard from './pages/AdminDashboard';
-import EditUser from './pages/admin/EditUser';
+import CreateProfile from './pages/admin/CreateProfile';
 import EditProfile from './pages/admin/EditProfile';
 
 const NavBar = () => {
@@ -40,7 +40,12 @@ const NavBar = () => {
     >
       <Link
         to="/"
-        style={{ color: 'white', textDecoration: 'none', fontSize: '20px', fontWeight: 'bold' }}
+        style={{
+          color: 'white',
+          textDecoration: 'none',
+          fontSize: '20px',
+          fontWeight: 'bold'
+        }}
       >
         💍 Kalyanamala
       </Link>
@@ -103,6 +108,7 @@ const NavBar = () => {
 
 function AppContent() {
   const { isAuthenticated, user } = useContext(AuthContext);
+  const isAdmin = user?.role === 'admin' || user?.role === 'subadmin';
 
   return (
     <div>
@@ -119,30 +125,20 @@ function AppContent() {
 
         <Route
           path="/admin"
-          element={
-            isAuthenticated && (user?.role === 'admin' || user?.role === 'subadmin')
-              ? <AdminDashboard />
-              : <Navigate to="/" replace />
-          }
+          element={isAuthenticated && isAdmin ? <AdminDashboard /> : <Navigate to="/" replace />}
         />
 
         <Route
-          path="/admin/users/:id/edit"
-          element={
-            isAuthenticated && (user?.role === 'admin' || user?.role === 'subadmin')
-              ? <EditUser />
-              : <Navigate to="/" replace />
-          }
+          path="/admin/profiles/create"
+          element={isAuthenticated && isAdmin ? <CreateProfile /> : <Navigate to="/" replace />}
         />
 
         <Route
           path="/admin/profiles/:id/edit"
-          element={
-            isAuthenticated && (user?.role === 'admin' || user?.role === 'subadmin')
-              ? <EditProfile />
-              : <Navigate to="/" replace />
-          }
+          element={isAuthenticated && isAdmin ? <EditProfile /> : <Navigate to="/" replace />}
         />
+
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>
   );
