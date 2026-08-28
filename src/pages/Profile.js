@@ -14,7 +14,6 @@ const initialForm = {
   subCaste: '',
   siblingsCount: '',
   maritalStatus: '',
-  haveChildren: 'No',
   fatherName: '',
   fatherOccupation: '',
   motherName: '',
@@ -102,6 +101,15 @@ const employmentTypeOptions = [
   { label: 'Other', value: 'other' }
 ];
 
+const genderOptions = [
+  { label: 'Male', value: 'male' },
+  { label: 'Female', value: 'female' }
+];
+
+const heightFeetOptions = [4,5,6,7];
+const heightInchesOptions = [0,1,2,3,4,5,6,7,8,9,10,11];
+const siblingCountOptions = [0,1,2,3];
+
 const inputStyle = {
   width: '100%',
   padding: '10px',
@@ -154,6 +162,12 @@ function calculateAge(dob) {
   return age;
 }
 
+function getMaxDOBFor18Plus() {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - 18);
+  return d.toISOString().split('T')[0];
+}
+
 const Profile = () => {
   const { token, user } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -167,6 +181,7 @@ const Profile = () => {
   const [form,setForm] = useState(initialForm);
 
   const age = useMemo(() => calculateAge(form.dateOfBirth), [form.dateOfBirth]);
+  const maxDOB = useMemo(() => getMaxDOBFor18Plus(), []);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -193,7 +208,6 @@ const Profile = () => {
           subCaste: p.subCaste || '',
           siblingsCount: p.siblingsCount?.toString() || '',
           maritalStatus: p.maritalStatus || '',
-          haveChildren: p.haveChildren ? 'Yes' : 'No',
           fatherName: p.fatherName || '',
           fatherOccupation: p.fatherOccupation || '',
           motherName: p.motherName || '',
@@ -255,8 +269,13 @@ const Profile = () => {
         if (typeof item === 'string') {
           const msg = item.toLowerCase();
           if (msg.includes('marital')) mapped.maritalStatus = item;
+          else if (msg.includes('gender')) mapped.gender = item;
+          else if (msg.includes('date of birth')) mapped.dateOfBirth = item;
+          else if (msg.includes('height feet')) mapped.heightFeet = item;
+          else if (msg.includes('height inches')) mapped.heightInches = item;
           else if (msg.includes('religion')) mapped.religion = item;
           else if (msg.includes('sub caste') || msg.includes('subcaste')) mapped.subCaste = item;
+          else if (msg.includes('siblings')) mapped.siblingsCount = item;
           else if (msg.includes('father name')) mapped.fatherName = item;
           else if (msg.includes('father occupation')) mapped.fatherOccupation = item;
           else if (msg.includes('mother name')) mapped.motherName = item;
@@ -304,7 +323,6 @@ const Profile = () => {
       subCaste: form.subCaste,
       siblingsCount: Number(form.siblingsCount || 0),
       maritalStatus: form.maritalStatus,
-      haveChildren: form.haveChildren === 'Yes',
       fatherName: form.fatherName,
       fatherOccupation: form.fatherOccupation,
       motherName: form.motherName,
@@ -336,7 +354,6 @@ const Profile = () => {
 
     try {
       let res;
-
       if (profile) {
         res = await axios.put(`${API_BASE}/api/profiles/me`, payload, {
           headers: { Authorization: `Bearer ${token}` }
@@ -424,7 +441,6 @@ const Profile = () => {
             <p><strong>Sub Caste:</strong> {profile.subCaste}</p>
             <p><strong>No. of siblings:</strong> {profile.siblingsCount}</p>
             <p><strong>Marital status:</strong> {profile.maritalStatus}</p>
-            <p><strong>Have Children:</strong> {profile.haveChildren ? 'Yes' : 'No'}</p>
             <p><strong>Father’s Name:</strong> {profile.fatherName}</p>
             <p><strong>Father Occupation:</strong> {profile.fatherOccupation}</p>
             <p><strong>Mother’s Name:</strong> {profile.motherName}</p>
@@ -434,7 +450,7 @@ const Profile = () => {
           <div style={sectionStyle}>
             <h3>Professional & Education</h3>
             <p><strong>Highest Education:</strong> {profile.highestEducation}</p>
-            <p><strong>Field of Study / Specialization:</strong> {profile.fieldOfStudy}</p>
+            <p><strong>Field of Study:</strong> {profile.fieldOfStudy}</p>
             <p><strong>College:</strong> {profile.college}</p>
             <p><strong>Occupation:</strong> {profile.occupation}</p>
             <p><strong>Employment Type:</strong> {profile.employmentType}</p>
@@ -469,19 +485,29 @@ const Profile = () => {
             <label htmlFor="gender">Gender</label>
             <select id="gender" name="gender" value={form.gender} onChange={handleChange} style={getStyle('gender')} required>
               <option value="">Select</option>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
+              {genderOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
             </select>
             {fieldErrors.gender && <div style={{ color: 'red' }}>{fieldErrors.gender}</div>}
 
             <label htmlFor="dateOfBirth">DOB</label>
-            <input id="dateOfBirth" type="date" name="dateOfBirth" value={form.dateOfBirth} onChange={handleChange} style={getStyle('dateOfBirth')} required />
+            <input
+              id="dateOfBirth"
+              type="date"
+              name="dateOfBirth"
+              value={form.dateOfBirth}
+              onChange={handleChange}
+              style={getStyle('dateOfBirth')}
+              max={maxDOB}
+              required
+            />
             {fieldErrors.dateOfBirth && <div style={{ color: 'red' }}>{fieldErrors.dateOfBirth}</div>}
 
             <label htmlFor="heightFeet">Height Feet</label>
             <select id="heightFeet" name="heightFeet" value={form.heightFeet} onChange={handleChange} style={getStyle('heightFeet')} required>
-              <option value="">Feet</option>
-              {[4,5,6,7].map((n) => (
+              <option value="">Select</option>
+              {heightFeetOptions.map((n) => (
                 <option key={n} value={n}>{n}</option>
               ))}
             </select>
@@ -489,8 +515,8 @@ const Profile = () => {
 
             <label htmlFor="heightInches">Height Inches</label>
             <select id="heightInches" name="heightInches" value={form.heightInches} onChange={handleChange} style={getStyle('heightInches')} required>
-              <option value="">Inches</option>
-              {[0,1,2,3,4,5,6,7,8,9,10,11].map((n) => (
+              <option value="">Select</option>
+              {heightInchesOptions.map((n) => (
                 <option key={n} value={n}>{n}</option>
               ))}
             </select>
@@ -519,7 +545,12 @@ const Profile = () => {
             {fieldErrors.subCaste && <div style={{ color: 'red' }}>{fieldErrors.subCaste}</div>}
 
             <label htmlFor="siblingsCount">No. of siblings</label>
-            <input id="siblingsCount" type="number" name="siblingsCount" value={form.siblingsCount} onChange={handleChange} style={getStyle('siblingsCount')} />
+            <select id="siblingsCount" name="siblingsCount" value={form.siblingsCount} onChange={handleChange} style={getStyle('siblingsCount')} required>
+              <option value="">Select</option>
+              {siblingCountOptions.map((n) => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
             {fieldErrors.siblingsCount && <div style={{ color: 'red' }}>{fieldErrors.siblingsCount}</div>}
 
             <label htmlFor="maritalStatus">Marital status</label>
@@ -530,12 +561,6 @@ const Profile = () => {
               ))}
             </select>
             {fieldErrors.maritalStatus && <div style={{ color: 'red' }}>{fieldErrors.maritalStatus}</div>}
-
-            <label htmlFor="haveChildren">Have Children</label>
-            <select id="haveChildren" name="haveChildren" value={form.haveChildren} onChange={handleChange} style={inputStyle}>
-              <option value="No">No</option>
-              <option value="Yes">Yes</option>
-            </select>
 
             <label htmlFor="fatherName">Father’s Name</label>
             <input id="fatherName" name="fatherName" value={form.fatherName} onChange={handleChange} style={getStyle('fatherName')} required />
@@ -604,7 +629,15 @@ const Profile = () => {
             {fieldErrors.industry && <div style={{ color: 'red' }}>{fieldErrors.industry}</div>}
 
             <label htmlFor="income">Income</label>
-            <input id="income" type="number" name="income" value={form.income} onChange={handleChange} style={getStyle('income')} required />
+            <input
+              id="income"
+              type="number"
+              name="income"
+              value={form.income}
+              onChange={handleChange}
+              style={getStyle('income')}
+              required
+            />
             {fieldErrors.income && <div style={{ color: 'red' }}>{fieldErrors.income}</div>}
           </div>
 
@@ -641,11 +674,25 @@ const Profile = () => {
             <h3>About & Preference</h3>
 
             <label htmlFor="aboutMe">About Me</label>
-            <textarea id="aboutMe" name="aboutMe" value={form.aboutMe} onChange={handleChange} rows="5" style={getStyle('aboutMe')} required />
+            <textarea
+              id="aboutMe"
+              name="aboutMe"
+              value={form.aboutMe}
+              onChange={handleChange}
+              rows="5"
+              style={getStyle('aboutMe')}
+              required
+            />
             {fieldErrors.aboutMe && <div style={{ color: 'red' }}>{fieldErrors.aboutMe}</div>}
 
             <label htmlFor="preferredMatch">Preferred Match</label>
-            <select id="preferredMatch" name="preferredMatch" value={form.preferredMatch} onChange={handleChange} style={inputStyle}>
+            <select
+              id="preferredMatch"
+              name="preferredMatch"
+              value={form.preferredMatch}
+              onChange={handleChange}
+              style={inputStyle}
+            >
               <option value="same_religion">Same Religion</option>
               <option value="any_religion">Any Religion</option>
               <option value="open">Open</option>
