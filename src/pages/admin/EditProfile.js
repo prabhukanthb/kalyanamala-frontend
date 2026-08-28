@@ -1,18 +1,132 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 
 const API_BASE = 'https://kalyanamala-backend-production.up.railway.app';
 
+const southIndianStates = [
+  'Andhra Pradesh',
+  'Telangana',
+  'Karnataka',
+  'Tamil Nadu',
+  'Kerala',
+  'Puducherry'
+];
+
+const educationOptions = [
+  '10th Pass',
+  '12th Pass',
+  'Diploma',
+  'ITI',
+  'B.A',
+  'B.Sc',
+  'B.Com',
+  'B.Tech',
+  'M.A',
+  'M.Sc',
+  'M.Com',
+  'M.Tech',
+  'MBA',
+  'MCA',
+  'MBBS',
+  'BDS',
+  'MD',
+  'MS',
+  'PhD',
+  'Other'
+];
+
+const maritalStatusOptions = [
+  { label: 'Never married', value: 'Nevermarried' },
+  { label: 'Divorced', value: 'Divorced' },
+  { label: 'Widowed', value: 'Widowed' },
+  { label: 'Awaiting Divorce', value: 'AwaitingDivorce' }
+];
+
+const religionOptions = [
+  { label: 'Christian', value: 'Christian' },
+  { label: 'Hindu', value: 'Hindu' },
+  { label: 'Ambedkarist', value: 'Ambedkarist' },
+  { label: 'Buddhist', value: 'Buddhist' },
+  { label: 'Other', value: 'Other' }
+];
+
+const subCasteOptions = [
+  { label: 'SC', value: 'SC' },
+  { label: 'BC', value: 'BC' },
+  { label: 'OC', value: 'OC' },
+  { label: 'NA', value: 'NA' }
+];
+
+const employmentTypeOptions = [
+  { label: 'Private', value: 'private' },
+  { label: 'Public', value: 'public' },
+  { label: 'Govt', value: 'govt' },
+  { label: 'Business', value: 'business' },
+  { label: 'Self Employed', value: 'self-employed' },
+  { label: 'Other', value: 'other' }
+];
+
+const genderOptions = [
+  { label: 'Male', value: 'male' },
+  { label: 'Female', value: 'female' }
+];
+
+const heightFeetOptions = [4,5,6,7];
+const heightInchesOptions = [0,1,2,3,4,5,6,7,8,9,10,11];
+const siblingCountOptions = [0,1,2,3];
+
+const inputStyle = {
+  width: '100%',
+  padding: '10px',
+  marginTop: '5px',
+  marginBottom: '14px',
+  boxSizing: 'border-box'
+};
+
+const sectionStyle = {
+  border: '1px solid #ddd',
+  padding: '18px',
+  marginBottom: '20px',
+  borderRadius: '8px',
+  background: '#fafafa'
+};
+
+const buttonStyle = {
+  padding: '12px 20px',
+  backgroundColor: '#2196F3',
+  color: 'white',
+  border: 'none',
+  borderRadius: '5px',
+  cursor: 'pointer'
+};
+
+function getMaxDOBFor18Plus() {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - 18);
+  return d.toISOString().split('T')[0];
+}
+
+function calculateAge(dob) {
+  if (!dob) return null;
+  const birth = new Date(dob);
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age;
+}
+
 const EditProfile = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
   const { token } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   const [loading,setLoading] = useState(true);
   const [saving,setSaving] = useState(false);
   const [error,setError] = useState('');
+  const [fieldErrors,setFieldErrors] = useState({});
   const [form,setForm] = useState({
     gender: '',
     dateOfBirth: '',
@@ -22,7 +136,6 @@ const EditProfile = () => {
     subCaste: '',
     siblingsCount: '',
     maritalStatus: '',
-    haveChildren: 'No',
     fatherName: '',
     fatherOccupation: '',
     motherName: '',
@@ -40,13 +153,16 @@ const EditProfile = () => {
     streetName: '',
     city: '',
     state: '',
-    country: '',
+    country: 'India',
     pinCode: '',
     aboutMe: '',
-    preferredMatch: '',
+    preferredMatch: 'any_religion',
     showInSearch: false,
-    approvalStatus: ''
+    approvalStatus: 'pending'
   });
+
+  const maxDOB = useMemo(() => getMaxDOBFor18Plus(), []);
+  const age = useMemo(() => calculateAge(form.dateOfBirth), [form.dateOfBirth]);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -56,6 +172,7 @@ const EditProfile = () => {
         });
 
         const p = res.data.profile;
+
         setForm({
           gender: p.gender || '',
           dateOfBirth: p.dateOfBirth ? new Date(p.dateOfBirth).toISOString().split('T')[0] : '',
@@ -65,7 +182,6 @@ const EditProfile = () => {
           subCaste: p.subCaste || '',
           siblingsCount: p.siblingsCount?.toString() || '',
           maritalStatus: p.maritalStatus || '',
-          haveChildren: p.haveChildren ? 'Yes' : 'No',
           fatherName: p.fatherName || '',
           fatherOccupation: p.fatherOccupation || '',
           motherName: p.motherName || '',
@@ -83,15 +199,15 @@ const EditProfile = () => {
           streetName: p.currentAddress?.streetName || '',
           city: p.currentAddress?.city || '',
           state: p.currentAddress?.state || '',
-          country: p.currentAddress?.country || '',
+          country: p.currentAddress?.country || 'India',
           pinCode: p.currentAddress?.pinCode || '',
           aboutMe: p.aboutMe || '',
-          preferredMatch: p.preferredMatch || '',
+          preferredMatch: p.preferredMatch || 'any_religion',
           showInSearch: p.showInSearch || false,
-          approvalStatus: p.approvalStatus || ''
+          approvalStatus: p.approvalStatus || 'pending'
         });
       } catch (err) {
-        setError(err.response?.data?.message || 'Failed to load profile');
+        setError(err.response?.data?.message || err.response?.data?.error || 'Failed to load profile');
       } finally {
         setLoading(false);
       }
@@ -106,12 +222,21 @@ const EditProfile = () => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+    setFieldErrors((prev) => ({
+      ...prev,
+      [name]: ''
+    }));
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
-    setSaving(true);
     setError('');
+    setFieldErrors({});
+
+    if (!age || age < 18) {
+      setError('User must be at least 18 years old.');
+      return;
+    }
 
     const payload = {
       gender: form.gender,
@@ -122,7 +247,6 @@ const EditProfile = () => {
       subCaste: form.subCaste,
       siblingsCount: Number(form.siblingsCount || 0),
       maritalStatus: form.maritalStatus,
-      haveChildren: form.haveChildren === 'Yes',
       fatherName: form.fatherName,
       fatherOccupation: form.fatherOccupation,
       motherName: form.motherName,
@@ -137,6 +261,7 @@ const EditProfile = () => {
       jobLocation: form.jobLocation,
       industry: form.industry,
       income: Number(form.income),
+      incomeCurrency: 'INR',
       currentAddress: {
         streetName: form.streetName,
         city: form.city,
@@ -146,17 +271,32 @@ const EditProfile = () => {
       },
       aboutMe: form.aboutMe,
       preferredMatch: form.preferredMatch,
+      approvalStatus: form.approvalStatus,
       showInSearch: form.showInSearch,
-      approvalStatus: form.approvalStatus
+      caste: 'Mala'
     };
 
     try {
+      setSaving(true);
+
       await axios.put(`${API_BASE}/api/profiles/${id}`, payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
+
       navigate('/admin');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save profile');
+      const data = err.response?.data;
+      setError(data?.message || data?.error || 'Failed to save profile');
+
+      if (Array.isArray(data?.details)) {
+        const mapped = {};
+        data.details.forEach((item) => {
+          if (item?.field) {
+            mapped[item.field] = item.message;
+          }
+        });
+        setFieldErrors(mapped);
+      }
     } finally {
       setSaving(false);
     }
@@ -167,56 +307,200 @@ const EditProfile = () => {
   }
 
   return (
-    <div style={{ maxWidth: '900px', margin: '30px auto', padding: '20px' }}>
+    <div style={{ maxWidth: '950px', margin: '40px auto', padding: '20px' }}>
       <h2>Edit Profile</h2>
 
-      {error && <div style={{ color: 'red', marginBottom: '15px' }}>{error}</div>}
+      {error && (
+        <div style={{ color: 'red', marginBottom: '15px', padding: '10px', background: '#ffebee', borderRadius: '6px' }}>
+          {error}
+        </div>
+      )}
 
       <form onSubmit={handleSave}>
-        <input name="gender" value={form.gender} onChange={handleChange} placeholder="Gender" style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
-        <input name="dateOfBirth" type="date" value={form.dateOfBirth} onChange={handleChange} style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
-        <input name="heightFeet" value={form.heightFeet} onChange={handleChange} placeholder="Height Feet" style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
-        <input name="heightInches" value={form.heightInches} onChange={handleChange} placeholder="Height Inches" style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
-        <input name="religion" value={form.religion} onChange={handleChange} placeholder="Religion" style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
-        <input name="subCaste" value={form.subCaste} onChange={handleChange} placeholder="Sub Caste" style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
-        <input name="siblingsCount" value={form.siblingsCount} onChange={handleChange} placeholder="Siblings Count" style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
-        <input name="maritalStatus" value={form.maritalStatus} onChange={handleChange} placeholder="Marital Status" style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
-        <input name="haveChildren" value={form.haveChildren} onChange={handleChange} placeholder="Have Children" style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
-        <input name="fatherName" value={form.fatherName} onChange={handleChange} placeholder="Father Name" style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
-        <input name="fatherOccupation" value={form.fatherOccupation} onChange={handleChange} placeholder="Father Occupation" style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
-        <input name="motherName" value={form.motherName} onChange={handleChange} placeholder="Mother Name" style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
-        <input name="motherOccupation" value={form.motherOccupation} onChange={handleChange} placeholder="Mother Occupation" style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
-        <input name="highestEducation" value={form.highestEducation} onChange={handleChange} placeholder="Highest Education" style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
-        <input name="fieldOfStudy" value={form.fieldOfStudy} onChange={handleChange} placeholder="Field Of Study" style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
-        <input name="college" value={form.college} onChange={handleChange} placeholder="College" style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
-        <input name="occupation" value={form.occupation} onChange={handleChange} placeholder="Occupation" style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
-        <input name="employmentType" value={form.employmentType} onChange={handleChange} placeholder="Employment Type" style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
-        <input name="companyName" value={form.companyName} onChange={handleChange} placeholder="Company Name" style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
-        <input name="jobTitle" value={form.jobTitle} onChange={handleChange} placeholder="Job Title" style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
-        <input name="jobLocation" value={form.jobLocation} onChange={handleChange} placeholder="Job Location" style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
-        <input name="industry" value={form.industry} onChange={handleChange} placeholder="Industry" style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
-        <input name="income" value={form.income} onChange={handleChange} placeholder="Income" style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
-        <input name="streetName" value={form.streetName} onChange={handleChange} placeholder="Street Name" style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
-        <input name="city" value={form.city} onChange={handleChange} placeholder="City" style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
-        <input name="state" value={form.state} onChange={handleChange} placeholder="State" style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
-        <input name="country" value={form.country} onChange={handleChange} placeholder="Country" style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
-        <input name="pinCode" value={form.pinCode} onChange={handleChange} placeholder="Pin Code" style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
-        <textarea name="aboutMe" value={form.aboutMe} onChange={handleChange} placeholder="About Me" style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
-        <input name="preferredMatch" value={form.preferredMatch} onChange={handleChange} placeholder="Preferred Match" style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
+        <div style={sectionStyle}>
+          <h3>Basic Details</h3>
 
-        <label>
+          <label htmlFor="gender">Gender</label>
+          <select id="gender" name="gender" value={form.gender} onChange={handleChange} style={inputStyle} required>
+            <option value="">Select</option>
+            {genderOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+
+          <label htmlFor="dateOfBirth">DOB</label>
           <input
-            type="checkbox"
-            name="showInSearch"
-            checked={form.showInSearch}
+            id="dateOfBirth"
+            type="date"
+            name="dateOfBirth"
+            value={form.dateOfBirth}
             onChange={handleChange}
+            style={inputStyle}
+            max={maxDOB}
+            required
           />
-          Show in Search
-        </label>
 
-        <br /><br />
+          <label htmlFor="heightFeet">Height Feet</label>
+          <select id="heightFeet" name="heightFeet" value={form.heightFeet} onChange={handleChange} style={inputStyle} required>
+            <option value="">Select</option>
+            {heightFeetOptions.map((n) => <option key={n} value={n}>{n}</option>)}
+          </select>
 
-        <button type="submit" disabled={saving}>
+          <label htmlFor="heightInches">Height Inches</label>
+          <select id="heightInches" name="heightInches" value={form.heightInches} onChange={handleChange} style={inputStyle} required>
+            <option value="">Select</option>
+            {heightInchesOptions.map((n) => <option key={n} value={n}>{n}</option>)}
+          </select>
+        </div>
+
+        <div style={sectionStyle}>
+          <h3>Religion & Family</h3>
+
+          <label htmlFor="religion">Religion</label>
+          <select id="religion" name="religion" value={form.religion} onChange={handleChange} style={inputStyle} required>
+            <option value="">Select</option>
+            {religionOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+
+          <label htmlFor="subCaste">Sub Caste</label>
+          <select id="subCaste" name="subCaste" value={form.subCaste} onChange={handleChange} style={inputStyle} required>
+            <option value="">Select</option>
+            {subCasteOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+
+          <label htmlFor="siblingsCount">No. of siblings</label>
+          <select id="siblingsCount" name="siblingsCount" value={form.siblingsCount} onChange={handleChange} style={inputStyle} required>
+            <option value="">Select</option>
+            {siblingCountOptions.map((n) => (
+              <option key={n} value={n}>{n}</option>
+            ))}
+          </select>
+
+          <label htmlFor="maritalStatus">Marital status</label>
+          <select id="maritalStatus" name="maritalStatus" value={form.maritalStatus} onChange={handleChange} style={inputStyle} required>
+            <option value="">Select</option>
+            {maritalStatusOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+
+          <label htmlFor="fatherName">Father’s Name</label>
+          <input id="fatherName" name="fatherName" value={form.fatherName} onChange={handleChange} style={inputStyle} required />
+
+          <label htmlFor="fatherOccupation">Father Occupation</label>
+          <input id="fatherOccupation" name="fatherOccupation" value={form.fatherOccupation} onChange={handleChange} style={inputStyle} required />
+
+          <label htmlFor="motherName">Mother’s Name</label>
+          <input id="motherName" name="motherName" value={form.motherName} onChange={handleChange} style={inputStyle} required />
+
+          <label htmlFor="motherOccupation">Mother Occupation</label>
+          <input id="motherOccupation" name="motherOccupation" value={form.motherOccupation} onChange={handleChange} style={inputStyle} required />
+        </div>
+
+        <div style={sectionStyle}>
+          <h3>Professional & Education</h3>
+
+          <label htmlFor="highestEducation">Highest Education</label>
+          <select id="highestEducation" name="highestEducation" value={form.highestEducation} onChange={handleChange} style={inputStyle} required>
+            <option value="">Select</option>
+            {educationOptions.map((opt) => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </select>
+
+          <label htmlFor="fieldOfStudy">Field of Study</label>
+          <input id="fieldOfStudy" name="fieldOfStudy" value={form.fieldOfStudy} onChange={handleChange} style={inputStyle} required />
+
+          <label htmlFor="college">College</label>
+          <input id="college" name="college" value={form.college} onChange={handleChange} style={inputStyle} required />
+
+          <label htmlFor="occupation">Occupation</label>
+          <input id="occupation" name="occupation" value={form.occupation} onChange={handleChange} style={inputStyle} required />
+
+          <label htmlFor="employmentType">Employment Type</label>
+          <select id="employmentType" name="employmentType" value={form.employmentType} onChange={handleChange} style={inputStyle} required>
+            <option value="">Select</option>
+            {employmentTypeOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+
+          <label htmlFor="companyName">Company Name</label>
+          <input id="companyName" name="companyName" value={form.companyName} onChange={handleChange} style={inputStyle} required />
+
+          <label htmlFor="jobTitle">Job Title</label>
+          <input id="jobTitle" name="jobTitle" value={form.jobTitle} onChange={handleChange} style={inputStyle} required />
+
+          <label htmlFor="jobLocation">Job Location</label>
+          <input id="jobLocation" name="jobLocation" value={form.jobLocation} onChange={handleChange} style={inputStyle} required />
+
+          <label htmlFor="industry">Industry</label>
+          <input id="industry" name="industry" value={form.industry} onChange={handleChange} style={inputStyle} required />
+
+          <label htmlFor="income">Income</label>
+          <input id="income" type="number" name="income" value={form.income} onChange={handleChange} style={inputStyle} required />
+        </div>
+
+        <div style={sectionStyle}>
+          <h3>Current Address</h3>
+
+          <label htmlFor="streetName">Street Name</label>
+          <input id="streetName" name="streetName" value={form.streetName} onChange={handleChange} style={inputStyle} required />
+
+          <label htmlFor="city">City</label>
+          <input id="city" name="city" value={form.city} onChange={handleChange} style={inputStyle} required />
+
+          <label htmlFor="state">State</label>
+          <select id="state" name="state" value={form.state} onChange={handleChange} style={inputStyle} required>
+            <option value="">Select State</option>
+            {southIndianStates.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+
+          <label htmlFor="country">Country</label>
+          <input id="country" name="country" value={form.country} onChange={handleChange} style={inputStyle} required />
+
+          <label htmlFor="pinCode">Pin Code</label>
+          <input id="pinCode" name="pinCode" value={form.pinCode} onChange={handleChange} style={inputStyle} required />
+        </div>
+
+        <div style={sectionStyle}>
+          <h3>About & Preference</h3>
+
+          <label htmlFor="aboutMe">About Me</label>
+          <textarea id="aboutMe" name="aboutMe" value={form.aboutMe} onChange={handleChange} rows="5" style={inputStyle} required />
+
+          <label htmlFor="preferredMatch">Preferred Match</label>
+          <select id="preferredMatch" name="preferredMatch" value={form.preferredMatch} onChange={handleChange} style={inputStyle}>
+            <option value="same_religion">Same Religion</option>
+            <option value="any_religion">Any Religion</option>
+            <option value="open">Open</option>
+          </select>
+
+          <label htmlFor="showInSearch">
+            <input
+              id="showInSearch"
+              type="checkbox"
+              name="showInSearch"
+              checked={form.showInSearch}
+              onChange={handleChange}
+            />{' '}
+            Show in Search
+          </label>
+
+          <label htmlFor="approvalStatus">Approval Status</label>
+          <select id="approvalStatus" name="approvalStatus" value={form.approvalStatus} onChange={handleChange} style={inputStyle}>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+            <option value="deleted">Deleted</option>
+          </select>
+        </div>
+
+        <button type="submit" disabled={saving} style={buttonStyle}>
           {saving ? 'Saving...' : 'Save Profile'}
         </button>
       </form>
