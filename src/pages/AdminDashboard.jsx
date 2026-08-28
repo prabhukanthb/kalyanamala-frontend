@@ -9,7 +9,6 @@ const AdminDashboard = () => {
   const { token, user } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  const [users,setUsers] = useState([]);
   const [profiles,setProfiles] = useState([]);
   const [loading,setLoading] = useState(true);
   const [error,setError] = useState('');
@@ -18,18 +17,22 @@ const AdminDashboard = () => {
     Authorization: `Bearer ${token}`
   };
 
-  const loadData = async () => {
+  const loadProfiles = async () => {
     try {
       setLoading(true);
-      const [usersRes,profilesRes] = await Promise.all([
-        axios.get(`${API_BASE}/api/users`, { headers }),
-        axios.get(`${API_BASE}/api/profiles`, { headers })
-      ]);
+      setError('');
 
-      setUsers(usersRes.data.users || []);
-      setProfiles(profilesRes.data.profiles || []);
+      const res = await axios.get(`${API_BASE}/api/profiles`, {
+        headers
+      });
+
+      setProfiles(res.data.profiles || []);
     } catch (err) {
-      setError(err.response?.data?.message || err.response?.data?.error || 'Failed to load admin data');
+      setError(
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        'Failed to load profiles'
+      );
     } finally {
       setLoading(false);
     }
@@ -40,13 +43,19 @@ const AdminDashboard = () => {
       navigate('/login');
       return;
     }
-    loadData();
-  }, [token,navigate]);
+
+    if (user?.role !== 'admin' && user?.role !== 'subadmin') {
+      navigate('/');
+      return;
+    }
+
+    loadProfiles();
+  }, [token,user,navigate]);
 
   const handleApprove = async (profileId) => {
     try {
       await axios.put(`${API_BASE}/api/profiles/${profileId}/approve`, {}, { headers });
-      loadData();
+      loadProfiles();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to approve profile');
     }
@@ -57,19 +66,24 @@ const AdminDashboard = () => {
     if (!rejectedReason) return;
 
     try {
-      await axios.put(`${API_BASE}/api/profiles/${profileId}/reject`, { rejectedReason }, { headers });
-      loadData();
+      await axios.put(
+        `${API_BASE}/api/profiles/${profileId}/reject`,
+        { rejectedReason },
+        { headers }
+      );
+      loadProfiles();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to reject profile');
     }
   };
 
   const handleDelete = async (profileId) => {
-    if (!window.confirm('Delete this profile?')) return;
+    const confirmDelete = window.confirm('Are you sure you want to delete this profile?');
+    if (!confirmDelete) return;
 
     try {
       await axios.delete(`${API_BASE}/api/profiles/${profileId}`, { headers });
-      loadData();
+      loadProfiles();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to delete profile');
     }
@@ -84,55 +98,59 @@ const AdminDashboard = () => {
       <h2>Admin Dashboard</h2>
 
       {error && (
-        <div style={{ background: '#ffebee', color: 'red', padding: '10px', marginBottom: '20px' }}>
+        <div
+          style={{
+            background: '#ffebee',
+            color: 'red',
+            padding: '10px',
+            marginBottom: '20px',
+            borderRadius: '6px'
+          }}
+        >
           {error}
         </div>
       )}
 
       <div style={{ marginBottom: '20px' }}>
-        <button onClick={() => navigate('/profile')} style={{ padding: '10px 16px', marginRight: '10px' }}>
-          Open Profile Page
+        <button
+          onClick={() => navigate('/admin/profiles/create')}
+          style={{
+            padding: '10px 16px',
+            marginRight: '10px',
+            cursor: 'pointer'
+          }}
+        >
+          Create New Profile
+        </button>
+
+        <button
+          onClick={loadProfiles}
+          style={{
+            padding: '10px 16px',
+            cursor: 'pointer'
+          }}
+        >
+          Refresh Profiles
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '30px' }}>
-        <section style={{ border: '1px solid #ddd', padding: '16px', borderRadius: '8px' }}>
-          <h3>Users ({users.length})</h3>
-          <table width="100%" border="1" cellPadding="8" style={{ borderCollapse: 'collapse' }}>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Surname</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr key={u._id}>
-                  <td>{u.firstName || '-'}</td>
-                  <td>{u.surname || '-'}</td>
-                  <td>{u.email || '-'}</td>
-                  <td>{u.phone || '-'}</td>
-                  <td>{u.role || '-'}</td>
-                  <td>{u.status || '-'}</td>
-                  <td>
-                    <button onClick={() => navigate(`/admin/users/${u._id}/edit`)}>
-                      Edit User
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
+      <section
+        style={{
+          border: '1px solid #ddd',
+          padding: '16px',
+          borderRadius: '8px',
+          background: '#fff'
+        }}
+      >
+        <h3>Profiles ({profiles.length})</h3>
 
-        <section style={{ border: '1px solid #ddd', padding: '16px', borderRadius: '8px' }}>
-          <h3>Profiles ({profiles.length})</h3>
-          <table width="100%" border="1" cellPadding="8" style={{ borderCollapse: 'collapse' }}>
+        <div style={{ overflowX: 'auto' }}>
+          <table
+            width="100%"
+            border="1"
+            cellPadding="8"
+            style={{ borderCollapse: 'collapse', minWidth: '1100px' }}
+          >
             <thead>
               <tr>
                 <th>Profile ID</th>
@@ -142,41 +160,67 @@ const AdminDashboard = () => {
                 <th>Marital Status</th>
                 <th>Status</th>
                 <th>Show in Search</th>
+                <th>Completion %</th>
                 <th>Actions</th>
               </tr>
             </thead>
+
             <tbody>
-              {profiles.map((p) => (
-                <tr key={p._id}>
-                  <td>{p.profileId || '-'}</td>
-                  <td>
-                    {p.userId?.firstName || ''} {p.userId?.lastName || ''}
-                  </td>
-                  <td>{p.gender || '-'}</td>
-                  <td>{p.religion || '-'}</td>
-                  <td>{p.maritalStatus || '-'}</td>
-                  <td>{p.approvalStatus || '-'}</td>
-                  <td>{p.showInSearch ? 'Yes' : 'No'}</td>
-                  <td>
-                    <button onClick={() => navigate(`/admin/profiles/${p._id}/edit`)}>
-                      Edit
-                    </button>
-                    <button onClick={() => handleApprove(p._id)} style={{ marginLeft: '8px' }}>
-                      Approve
-                    </button>
-                    <button onClick={() => handleReject(p._id)} style={{ marginLeft: '8px' }}>
-                      Reject
-                    </button>
-                    <button onClick={() => handleDelete(p._id)} style={{ marginLeft: '8px' }}>
-                      Delete
-                    </button>
+              {profiles.length > 0 ? (
+                profiles.map((p) => (
+                  <tr key={p._id}>
+                    <td>{p.profileId || '-'}</td>
+                    <td>
+                      {(p.userId?.firstName || '') + ' ' + (p.userId?.lastName || '')}
+                    </td>
+                    <td>{p.gender || '-'}</td>
+                    <td>{p.religion || '-'}</td>
+                    <td>{p.maritalStatus || '-'}</td>
+                    <td>{p.approvalStatus || '-'}</td>
+                    <td>{p.showInSearch ? 'Yes' : 'No'}</td>
+                    <td>{p.profileCompletion ?? '-'}</td>
+                    <td>
+                      <button
+                        onClick={() => navigate(`/admin/profiles/${p._id}/edit`)}
+                        style={{ marginRight: '8px', cursor: 'pointer' }}
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        onClick={() => handleApprove(p._id)}
+                        style={{ marginRight: '8px', cursor: 'pointer' }}
+                      >
+                        Approve
+                      </button>
+
+                      <button
+                        onClick={() => handleReject(p._id)}
+                        style={{ marginRight: '8px', cursor: 'pointer' }}
+                      >
+                        Reject
+                      </button>
+
+                      <button
+                        onClick={() => handleDelete(p._id)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="9" style={{ textAlign: 'center', padding: '20px' }}>
+                    No profiles found.
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
-        </section>
-      </div>
+        </div>
+      </section>
     </div>
   );
 };
