@@ -1,9 +1,7 @@
 import React, { createContext, useEffect, useState } from 'react';
-import axios from 'axios';
+import { authService } from '../services/api';
 
 export const AuthContext = createContext();
-
-const API_BASE = 'https://kalyanamala-backend-production.up.railway.app';
 
 export const AuthProvider = ({ children }) => {
   const [user,setUser] = useState(null);
@@ -21,11 +19,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       try {
-        const res = await axios.get(`${API_BASE}/api/auth/me`, {
-          headers: {
-            Authorization: `Bearer ${savedToken}`
-          }
-        });
+        const res = await authService.getCurrentUser();
 
         setToken(savedToken);
         setUser(res.data.user);
@@ -45,10 +39,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (emailOrPhone, password) => {
-    const res = await axios.post(`${API_BASE}/api/auth/login`, {
-      emailOrPhone,
-      password
-    });
+    const res = await authService.login({ emailOrPhone, password });
 
     const { token: newToken, user: loggedInUser } = res.data;
 
@@ -61,7 +52,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const register = async (formData) => {
-    const res = await axios.post(`${API_BASE}/api/auth/register`, formData);
+    const res = await authService.register(formData);
 
     const { token: newToken, user: registeredUser } = res.data;
 
@@ -91,7 +82,7 @@ export const AuthProvider = ({ children }) => {
         register,
         logout,
         setUser,
-        setToken
+        setToken,
       }}
     >
       {children}
