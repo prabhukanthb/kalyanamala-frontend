@@ -126,7 +126,7 @@ const EditProfile = () => {
   const [loading,setLoading] = useState(true);
   const [saving,setSaving] = useState(false);
   const [error,setError] = useState('');
-  const [fieldErrors,setFieldErrors] = useState({});
+  const [,setFieldErrors] = useState({});
   const [form,setForm] = useState({
     gender: '',
     dateOfBirth: '',
