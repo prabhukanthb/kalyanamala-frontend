@@ -1,4 +1,23 @@
-import React, { useContext, useEffect, useState } from 'react';
+const loadProfiles = useCallback(async () => {
+  try {
+    setLoading(true);
+
+    const res = await axios.get(`${API_BASE}/api/profiles`, {
+      headers,
+    });
+
+    setProfiles(res.data.profiles || []);
+  } catch (err) {
+    setError(
+      err.response?.data?.message ||
+      err.response?.data?.error ||
+      'Failed to load profiles'
+    );
+  } finally {
+    setLoading(false);
+  }
+}, [headers]);
+
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
