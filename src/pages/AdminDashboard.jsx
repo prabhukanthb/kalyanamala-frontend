@@ -1,23 +1,4 @@
-const loadProfiles = useCallback(async () => {
-  try {
-    setLoading(true);
-
-    const res = await axios.get(`${API_BASE}/api/profiles`, {
-      headers,
-    });
-
-    setProfiles(res.data.profiles || []);
-  } catch (err) {
-    setError(
-      err.response?.data?.message ||
-      err.response?.data?.error ||
-      'Failed to load profiles'
-    );
-  } finally {
-    setLoading(false);
-  }
-}, [headers]);
-
+import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
@@ -32,11 +13,14 @@ const AdminDashboard = () => {
   const [loading,setLoading] = useState(true);
   const [error,setError] = useState('');
 
-  const headers = {
-    Authorization: `Bearer ${token}`
-  };
+  const headers = useMemo(
+    () => ({
+      Authorization: `Bearer ${token}`
+    }),
+    [token]
+  );
 
-  const loadProfiles = async () => {
+  const loadProfiles = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
@@ -55,7 +39,7 @@ const AdminDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [headers]);
 
   useEffect(() => {
     if (!token) {
@@ -69,7 +53,7 @@ const AdminDashboard = () => {
     }
 
     loadProfiles();
-  }, [token,user,navigate]);
+  }, [token,user,navigate,loadProfiles]);
 
   const handleApprove = async (profileId) => {
     try {
