@@ -34,7 +34,7 @@ const Login = () => {
         <input style={input} value={emailOrPhone} onChange={e => setEmailOrPhone(e.target.value)} />
 
         <label>Password</label>
-        <input style={input} type="password" value={password} onChange={e => setPassword(e.target.value)} />
+        <input style={input} type="password" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} />
 
         <button style={button} disabled={loading}>{loading ? 'Logging in...' : 'Login'}</button>
       </form>
