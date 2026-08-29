@@ -141,12 +141,6 @@ const secondaryButtonStyle = {
   marginRight: '10px'
 };
 
-const readOnlyStyle = {
-  ...inputStyle,
-  backgroundColor: '#f1f1f1',
-  cursor: 'not-allowed'
-};
-
 const errorFieldStyle = {
   ...inputStyle,
   border: '1px solid red'
