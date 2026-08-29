@@ -6,6 +6,10 @@ import { AuthContext } from '../../context/AuthContext';
 const API_BASE = 'https://kalyanamala-backend-production.up.railway.app';
 
 const initialForm = {
+  firstName: '',
+  lastName: '',
+  email: '',
+  phone: '',
   gender: '',
   dateOfBirth: '',
   heightFeet: '',
@@ -47,26 +51,8 @@ const southIndianStates = [
 ];
 
 const educationOptions = [
-  '10th Pass',
-  '12th Pass',
-  'Diploma',
-  'ITI',
-  'B.A',
-  'B.Sc',
-  'B.Com',
-  'B.Tech',
-  'M.A',
-  'M.Sc',
-  'M.Com',
-  'M.Tech',
-  'MBA',
-  'MCA',
-  'MBBS',
-  'BDS',
-  'MD',
-  'MS',
-  'PhD',
-  'Other'
+  '10th Pass','12th Pass','Diploma','ITI','B.A','B.Sc','B.Com','B.Tech',
+  'M.A','M.Sc','M.Com','M.Tech','MBA','MCA','MBBS','BDS','MD','MS','PhD','Other'
 ];
 
 const maritalStatusOptions = [
@@ -134,6 +120,14 @@ const buttonStyle = {
   cursor: 'pointer'
 };
 
+const successBoxStyle = {
+  background: '#e8f5e9',
+  border: '1px solid #4CAF50',
+  padding: '16px',
+  borderRadius: '8px',
+  marginBottom: '20px'
+};
+
 function getMaxDOBFor18Plus() {
   const d = new Date();
   d.setFullYear(d.getFullYear() - 18);
@@ -158,20 +152,15 @@ const CreateProfile = () => {
   const [saving,setSaving] = useState(false);
   const [error,setError] = useState('');
   const [fieldErrors,setFieldErrors] = useState({});
+  const [createdInfo,setCreatedInfo] = useState(null);
 
   const maxDOB = useMemo(() => getMaxDOBFor18Plus(), []);
   const age = useMemo(() => calculateAge(form.dateOfBirth), [form.dateOfBirth]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: value
-    }));
-    setFieldErrors((prev) => ({
-      ...prev,
-      [name]: ''
-    }));
+    setForm((prev) => ({ ...prev, [name]: value }));
+    setFieldErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
   const mapServerErrors = (data) => {
@@ -190,6 +179,7 @@ const CreateProfile = () => {
     e.preventDefault();
     setError('');
     setFieldErrors({});
+    setCreatedInfo(null);
 
     if (!age || age < 18) {
       setError('User must be at least 18 years old.');
@@ -197,6 +187,11 @@ const CreateProfile = () => {
     }
 
     const payload = {
+      firstName: form.firstName,
+      lastName: form.lastName,
+      email: form.email,
+      phone: form.phone,
+
       gender: form.gender,
       dateOfBirth: form.dateOfBirth,
       heightFeet: Number(form.heightFeet),
@@ -235,16 +230,24 @@ const CreateProfile = () => {
     try {
       setSaving(true);
 
-  await axios.post(`${API_BASE}/api/profiles`, payload, {
-  headers: { Authorization: `Bearer ${token}` }
-});
+      const res = await axios.post(`${API_BASE}/api/profiles/admin-create`, payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
-navigate('/admin');
-      
+      setCreatedInfo({
+        email: form.email,
+        phone: form.phone,
+        tempPassword: res.data.tempPassword,
+        profileId: res.data.profile?.profileId
+      });
+
+      setForm(initialForm);
+      window.scrollTo(0, 0);
     } catch (err) {
       const data = err.response?.data;
       setError(data?.message || data?.error || 'Failed to create profile');
       setFieldErrors(mapServerErrors(data));
+      window.scrollTo(0, 0);
     } finally {
       setSaving(false);
     }
@@ -259,6 +262,22 @@ navigate('/admin');
           <strong>Admin:</strong> {user?.firstName || '-'} {user?.surname || ''}
         </p>
       </div>
+
+      {createdInfo && (
+        <div style={successBoxStyle}>
+          <h3 style={{ marginTop: 0 }}>Profile created successfully</h3>
+          <p><strong>Profile ID:</strong> {createdInfo.profileId}</p>
+          <p><strong>Login (email):</strong> {createdInfo.email}</p>
+          <p><strong>Login (phone):</strong> {createdInfo.phone}</p>
+          <p><strong>Temporary password:</strong> {createdInfo.tempPassword}</p>
+          <p style={{ color: '#555' }}>
+            Share these details with the user. They should change the password after first login.
+          </p>
+          <button type="button" onClick={() => navigate('/admin')} style={buttonStyle}>
+            Back to Dashboard
+          </button>
+        </div>
+      )}
 
       {error && (
         <div
@@ -276,6 +295,57 @@ navigate('/admin');
 
       <form onSubmit={handleSave}>
         <div style={sectionStyle}>
+          <h3>Personal Details</h3>
+
+          <label htmlFor="firstName">First Name</label>
+          <input
+            id="firstName"
+            name="firstName"
+            value={form.firstName}
+            onChange={handleChange}
+            style={inputStyle}
+            required
+          />
+          {fieldErrors.firstName && <div style={{ color: 'red' }}>{fieldErrors.firstName}</div>}
+
+          <label htmlFor="lastName">Last Name</label>
+          <input
+            id="lastName"
+            name="lastName"
+            value={form.lastName}
+            onChange={handleChange}
+            style={inputStyle}
+            required
+          />
+          {fieldErrors.lastName && <div style={{ color: 'red' }}>{fieldErrors.lastName}</div>}
+
+          <label htmlFor="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            name="email"
+            value={form.email}
+            onChange={handleChange}
+            style={inputStyle}
+            required
+          />
+          {fieldErrors.email && <div style={{ color: 'red' }}>{fieldErrors.email}</div>}
+
+          <label htmlFor="phone">Phone (10 digits)</label>
+          <input
+            id="phone"
+            name="phone"
+            value={form.phone}
+            onChange={handleChange}
+            style={inputStyle}
+            maxLength="10"
+            pattern="[0-9]{10}"
+            required
+          />
+          {fieldErrors.phone && <div style={{ color: 'red' }}>{fieldErrors.phone}</div>}
+        </div>
+
+        <div style={sectionStyle}>
           <h3>Basic Details</h3>
 
           <label htmlFor="gender">Gender</label>
@@ -289,9 +359,7 @@ navigate('/admin');
           >
             <option value="">Select</option>
             {genderOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>
           {fieldErrors.gender && <div style={{ color: 'red' }}>{fieldErrors.gender}</div>}
@@ -307,9 +375,7 @@ navigate('/admin');
             max={maxDOB}
             required
           />
-          {fieldErrors.dateOfBirth && (
-            <div style={{ color: 'red' }}>{fieldErrors.dateOfBirth}</div>
-          )}
+          {fieldErrors.dateOfBirth && <div style={{ color: 'red' }}>{fieldErrors.dateOfBirth}</div>}
 
           <label htmlFor="heightFeet">Height Feet</label>
           <select
@@ -322,9 +388,7 @@ navigate('/admin');
           >
             <option value="">Select</option>
             {heightFeetOptions.map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
+              <option key={n} value={n}>{n}</option>
             ))}
           </select>
           {fieldErrors.heightFeet && <div style={{ color: 'red' }}>{fieldErrors.heightFeet}</div>}
@@ -340,18 +404,14 @@ navigate('/admin');
           >
             <option value="">Select</option>
             {heightInchesOptions.map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
+              <option key={n} value={n}>{n}</option>
             ))}
           </select>
-          {fieldErrors.heightInches && (
-            <div style={{ color: 'red' }}>{fieldErrors.heightInches}</div>
-          )}
+          {fieldErrors.heightInches && <div style={{ color: 'red' }}>{fieldErrors.heightInches}</div>}
         </div>
 
         <div style={sectionStyle}>
-          <h3>Religion & Family</h3>
+          <h3>Religion &amp; Family</h3>
 
           <label htmlFor="religion">Religion</label>
           <select
@@ -364,9 +424,7 @@ navigate('/admin');
           >
             <option value="">Select</option>
             {religionOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>
           {fieldErrors.religion && <div style={{ color: 'red' }}>{fieldErrors.religion}</div>}
@@ -382,9 +440,7 @@ navigate('/admin');
           >
             <option value="">Select</option>
             {subCasteOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>
           {fieldErrors.subCaste && <div style={{ color: 'red' }}>{fieldErrors.subCaste}</div>}
@@ -400,14 +456,10 @@ navigate('/admin');
           >
             <option value="">Select</option>
             {siblingCountOptions.map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
+              <option key={n} value={n}>{n}</option>
             ))}
           </select>
-          {fieldErrors.siblingsCount && (
-            <div style={{ color: 'red' }}>{fieldErrors.siblingsCount}</div>
-          )}
+          {fieldErrors.siblingsCount && <div style={{ color: 'red' }}>{fieldErrors.siblingsCount}</div>}
 
           <label htmlFor="maritalStatus">Marital status</label>
           <select
@@ -420,14 +472,10 @@ navigate('/admin');
           >
             <option value="">Select</option>
             {maritalStatusOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>
-          {fieldErrors.maritalStatus && (
-            <div style={{ color: 'red' }}>{fieldErrors.maritalStatus}</div>
-          )}
+          {fieldErrors.maritalStatus && <div style={{ color: 'red' }}>{fieldErrors.maritalStatus}</div>}
 
           <label htmlFor="fatherName">Father’s Name</label>
           <input
@@ -449,9 +497,7 @@ navigate('/admin');
             style={inputStyle}
             required
           />
-          {fieldErrors.fatherOccupation && (
-            <div style={{ color: 'red' }}>{fieldErrors.fatherOccupation}</div>
-          )}
+          {fieldErrors.fatherOccupation && <div style={{ color: 'red' }}>{fieldErrors.fatherOccupation}</div>}
 
           <label htmlFor="motherName">Mother’s Name</label>
           <input
@@ -473,13 +519,11 @@ navigate('/admin');
             style={inputStyle}
             required
           />
-          {fieldErrors.motherOccupation && (
-            <div style={{ color: 'red' }}>{fieldErrors.motherOccupation}</div>
-          )}
+          {fieldErrors.motherOccupation && <div style={{ color: 'red' }}>{fieldErrors.motherOccupation}</div>}
         </div>
 
         <div style={sectionStyle}>
-          <h3>Professional & Education</h3>
+          <h3>Professional &amp; Education</h3>
 
           <label htmlFor="highestEducation">Highest Education</label>
           <select
@@ -492,14 +536,10 @@ navigate('/admin');
           >
             <option value="">Select</option>
             {educationOptions.map((opt) => (
-              <option key={opt} value={opt}>
-                {opt}
-              </option>
+              <option key={opt} value={opt}>{opt}</option>
             ))}
           </select>
-          {fieldErrors.highestEducation && (
-            <div style={{ color: 'red' }}>{fieldErrors.highestEducation}</div>
-          )}
+          {fieldErrors.highestEducation && <div style={{ color: 'red' }}>{fieldErrors.highestEducation}</div>}
 
           <label htmlFor="fieldOfStudy">Field of Study</label>
           <input
@@ -545,14 +585,10 @@ navigate('/admin');
           >
             <option value="">Select</option>
             {employmentTypeOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>
-          {fieldErrors.employmentType && (
-            <div style={{ color: 'red' }}>{fieldErrors.employmentType}</div>
-          )}
+          {fieldErrors.employmentType && <div style={{ color: 'red' }}>{fieldErrors.employmentType}</div>}
 
           <label htmlFor="companyName">Company Name</label>
           <input
@@ -623,7 +659,9 @@ navigate('/admin');
             style={inputStyle}
             required
           />
-          {fieldErrors.streetName && <div style={{ color: 'red' }}>{fieldErrors.streetName}</div>}
+          {fieldErrors['currentAddress.streetName'] && (
+            <div style={{ color: 'red' }}>{fieldErrors['currentAddress.streetName']}</div>
+          )}
 
           <label htmlFor="city">City</label>
           <input
@@ -634,7 +672,9 @@ navigate('/admin');
             style={inputStyle}
             required
           />
-          {fieldErrors.city && <div style={{ color: 'red' }}>{fieldErrors.city}</div>}
+          {fieldErrors['currentAddress.city'] && (
+            <div style={{ color: 'red' }}>{fieldErrors['currentAddress.city']}</div>
+          )}
 
           <label htmlFor="state">State</label>
           <select
@@ -647,12 +687,12 @@ navigate('/admin');
           >
             <option value="">Select State</option>
             {southIndianStates.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
+              <option key={s} value={s}>{s}</option>
             ))}
           </select>
-          {fieldErrors.state && <div style={{ color: 'red' }}>{fieldErrors.state}</div>}
+          {fieldErrors['currentAddress.state'] && (
+            <div style={{ color: 'red' }}>{fieldErrors['currentAddress.state']}</div>
+          )}
 
           <label htmlFor="country">Country</label>
           <input
@@ -663,7 +703,9 @@ navigate('/admin');
             style={inputStyle}
             required
           />
-          {fieldErrors.country && <div style={{ color: 'red' }}>{fieldErrors.country}</div>}
+          {fieldErrors['currentAddress.country'] && (
+            <div style={{ color: 'red' }}>{fieldErrors['currentAddress.country']}</div>
+          )}
 
           <label htmlFor="pinCode">Pin Code</label>
           <input
@@ -674,11 +716,13 @@ navigate('/admin');
             style={inputStyle}
             required
           />
-          {fieldErrors.pinCode && <div style={{ color: 'red' }}>{fieldErrors.pinCode}</div>}
+          {fieldErrors['currentAddress.pinCode'] && (
+            <div style={{ color: 'red' }}>{fieldErrors['currentAddress.pinCode']}</div>
+          )}
         </div>
 
         <div style={sectionStyle}>
-          <h3>About & Preference</h3>
+          <h3>About &amp; Preference</h3>
 
           <label htmlFor="aboutMe">About Me</label>
           <textarea
