@@ -235,11 +235,12 @@ const CreateProfile = () => {
     try {
       setSaving(true);
 
-      const res = await axios.post(`${API_BASE}/api/profiles`, payload, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+  await axios.post(`${API_BASE}/api/profiles`, payload, {
+  headers: { Authorization: `Bearer ${token}` }
+});
 
-      navigate('/admin');
+navigate('/admin');
+      
     } catch (err) {
       const data = err.response?.data;
       setError(data?.message || data?.error || 'Failed to create profile');
