@@ -5,6 +5,10 @@ import { useNavigate } from 'react-router-dom';
 
 const API_BASE = 'https://kalyanamala-backend-production.up.railway.app';
 
+const CLOUD_NAME = 'bh4nvmuf';
+const UPLOAD_PRESET = 'kalyanamala';
+const MAX_PHOTOS = 3;
+
 const initialForm = {
   gender: '',
   dateOfBirth: '',
@@ -48,26 +52,8 @@ const southIndianStates = [
 ];
 
 const educationOptions = [
-  '10th Pass',
-  '12th Pass',
-  'Diploma',
-  'ITI',
-  'B.A',
-  'B.Sc',
-  'B.Com',
-  'B.Tech',
-  'M.A',
-  'M.Sc',
-  'M.Com',
-  'M.Tech',
-  'MBA',
-  'MCA',
-  'MBBS',
-  'BDS',
-  'MD',
-  'MS',
-  'PhD',
-  'Other'
+  '10th Pass','12th Pass','Diploma','ITI','B.A','B.Sc','B.Com','B.Tech',
+  'M.A','M.Sc','M.Com','M.Tech','MBA','MCA','MBBS','BDS','MD','MS','PhD','Other'
 ];
 
 const maritalStatusOptions = [
@@ -146,6 +132,15 @@ const errorFieldStyle = {
   border: '1px solid red'
 };
 
+const thumbStyle = {
+  width: 110,
+  height: 110,
+  objectFit: 'cover',
+  borderRadius: 6,
+  border: '1px solid #ddd',
+  display: 'block'
+};
+
 function calculateAge(dob) {
   if (!dob) return null;
   const birth = new Date(dob);
@@ -174,6 +169,11 @@ const Profile = () => {
   const [mode,setMode] = useState('view');
   const [form,setForm] = useState(initialForm);
 
+  // ---- photos ----
+  const [photos,setPhotos] = useState([]);
+  const [uploading,setUploading] = useState(false);
+  const [photoError,setPhotoError] = useState('');
+
   const age = useMemo(() => calculateAge(form.dateOfBirth), [form.dateOfBirth]);
   const maxDOB = useMemo(() => getMaxDOBFor18Plus(), []);
 
@@ -192,6 +192,7 @@ const Profile = () => {
 
         const p = res.data.profile;
         setProfile(p);
+        setPhotos(Array.isArray(p.photos) ? p.photos : []);
 
         setForm({
           gender: p.gender || '',
@@ -246,14 +247,66 @@ const Profile = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: value
-    }));
-    setFieldErrors((prev) => ({
-      ...prev,
-      [name]: ''
-    }));
+    setForm((prev) => ({ ...prev, [name]: value }));
+    setFieldErrors((prev) => ({ ...prev, [name]: '' }));
+  };
+
+  // ---- Cloudinary upload ----
+  const handlePhotoSelect = async (e) => {
+    const files = Array.from(e.target.files);
+    e.target.value = null;
+    if (!files.length) return;
+
+    setPhotoError('');
+
+    const room = MAX_PHOTOS - photos.length;
+    if (room <= 0) {
+      setPhotoError(`Maximum ${MAX_PHOTOS} photos allowed. Remove one to add another.`);
+      return;
+    }
+
+    const selected = files.slice(0, room);
+
+    for (const f of selected) {
+      if (!f.type.startsWith('image/')) {
+        setPhotoError('Only image files are allowed.');
+        return;
+      }
+      if (f.size > 5 * 1024 * 1024) {
+        setPhotoError(`"${f.name}" is larger than 5MB.`);
+        return;
+      }
+    }
+
+    setUploading(true);
+    try {
+      const urls = [];
+      for (const file of selected) {
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('upload_preset', UPLOAD_PRESET);
+
+        const res = await fetch(
+          `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+          { method: 'POST', body: fd }
+        );
+
+        const data = await res.json();
+        if (!res.ok || !data.secure_url) {
+          throw new Error(data?.error?.message || 'Upload failed');
+        }
+        urls.push(data.secure_url);
+      }
+      setPhotos((prev) => [...prev,...urls]);
+    } catch (err) {
+      setPhotoError(err.message || 'Photo upload failed. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removePhoto = (url) => {
+    setPhotos((prev) => prev.filter((p) => p !== url));
   };
 
   const mapServerErrors = (data) => {
@@ -290,6 +343,7 @@ const Profile = () => {
           else if (msg.includes('country')) mapped.country = item;
           else if (msg.includes('pin code')) mapped.pinCode = item;
           else if (msg.includes('about me')) mapped.aboutMe = item;
+          else if (msg.includes('photo')) mapped.photos = item;
         } else if (item?.field) {
           mapped[item.field] = item.message;
         }
@@ -302,6 +356,11 @@ const Profile = () => {
     e.preventDefault();
     setError('');
     setFieldErrors({});
+
+    if (uploading) {
+      setError('Please wait for photo upload to finish.');
+      return;
+    }
 
     if (!age || age < 18) {
       setError('You must be at least 18 years old.');
@@ -341,7 +400,8 @@ const Profile = () => {
       },
       aboutMe: form.aboutMe,
       preferredMatch: form.preferredMatch,
-      caste: 'Mala'
+      caste: 'Mala',
+      photos: photos
     };
 
     setSaving(true);
@@ -358,7 +418,9 @@ const Profile = () => {
         });
       }
 
-      setProfile(res.data.profile);
+      const saved = res.data.profile;
+      setProfile(saved);
+      setPhotos(Array.isArray(saved.photos) ? saved.photos : photos);
       setMode('view');
       setError('');
       setFieldErrors({});
@@ -422,6 +484,19 @@ const Profile = () => {
       {mode === 'view' && profile ? (
         <div>
           <div style={sectionStyle}>
+            <h3>Photos</h3>
+            {photos.length === 0 ? (
+              <p>No photos uploaded.</p>
+            ) : (
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                {photos.map((url) => (
+                  <img key={url} src={url} alt="profile" style={thumbStyle} />
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div style={sectionStyle}>
             <h3>Basic Details</h3>
             <p><strong>Gender:</strong> {profile.gender}</p>
             <p><strong>DOB:</strong> {profile.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString() : '-'}</p>
@@ -473,6 +548,57 @@ const Profile = () => {
         </div>
       ) : (
         <form onSubmit={handleSave}>
+          <div style={sectionStyle}>
+            <h3>Photos</h3>
+            <p style={{ marginTop: 0, color: '#555' }}>
+              Upload up to {MAX_PHOTOS} photos. JPG or PNG, max 5MB each.
+            </p>
+
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handlePhotoSelect}
+              disabled={uploading || photos.length >= MAX_PHOTOS}
+            />
+
+            {uploading && <p style={{ color: '#555' }}>Uploading…</p>}
+            {photoError && <div style={{ color: 'red', marginTop: 8 }}>{photoError}</div>}
+            {fieldErrors.photos && <div style={{ color: 'red', marginTop: 8 }}>{fieldErrors.photos}</div>}
+
+            {photos.length > 0 && (
+              <div style={{ display: 'flex', gap: 12, marginTop: 14, flexWrap: 'wrap' }}>
+                {photos.map((url) => (
+                  <div key={url} style={{ position: 'relative' }}>
+                    <img src={url} alt="profile" style={thumbStyle} />
+                    <button
+                      type="button"
+                      onClick={() => removePhoto(url)}
+                      title="Remove photo"
+                      style={{
+                        position: 'absolute',
+                        top: -8,
+                        right: -8,
+                        width: 24,
+                        height: 24,
+                        borderRadius: '50%',
+                        border: 'none',
+                        background: '#c00',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        lineHeight: '24px',
+                        padding: 0,
+                        fontSize: 15
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div style={sectionStyle}>
             <h3>Basic Details</h3>
 
@@ -693,8 +819,16 @@ const Profile = () => {
             </select>
           </div>
 
-          <button type="submit" disabled={saving} style={buttonStyle}>
-            {saving ? 'Saving...' : profile ? 'Update Profile' : 'Create Profile'}
+          <button
+            type="submit"
+            disabled={saving || uploading}
+            style={{
+              ...buttonStyle,
+              backgroundColor: (saving || uploading) ? '#999' : '#2196F3',
+              cursor: (saving || uploading) ? 'not-allowed' : 'pointer'
+            }}
+          >
+            {saving ? 'Saving...' : uploading ? 'Uploading photos...' : profile ? 'Update Profile' : 'Create Profile'}
           </button>
         </form>
       )}
