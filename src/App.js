@@ -17,6 +17,7 @@ import Profile from './pages/Profile';
 import AdminDashboard from './pages/AdminDashboard';
 import CreateProfile from './pages/admin/CreateProfile';
 import EditProfile from './pages/admin/EditProfile';
+import BrowseProfiles from './pages/BrowseProfiles';
 
 const NavBar = () => {
   const { isAuthenticated, logout, user } = useContext(AuthContext);
