@@ -8,79 +8,37 @@ const Home = () => {
 
   return (
     <div style={{ padding: '40px', textAlign: 'center' }}>
-      <h1>🎉 Welcome to Kalyanamala</h1>
-      <p style={{ fontSize: '18px' }}>Find your perfect match!</p>
+      <h1>Welcome to Kalyanamala</h1>
+      <p>Find your perfect match.</p>
 
       {isAuthenticated ? (
-        <div>
-          <h2>Welcome, {user?.firstName}! 👋</h2>
-          <div style={{ marginTop: '20px' }}>
-            <button 
-              onClick={() => navigate('/browse')}
-              style={{
-                padding: '10px 20px',
-                marginRight: '10px',
-                backgroundColor: '#4CAF50',
-                color: 'white',
-                border: 'none',
-                cursor: 'pointer',
-                borderRadius: '5px',
-                fontSize: '16px'
-              }}
-            >
-              Browse Profiles
-            </button>
-            <button 
-              onClick={() => navigate('/profile')}
-              style={{
-                padding: '10px 20px',
-                backgroundColor: '#2196F3',
-                color: 'white',
-                border: 'none',
-                cursor: 'pointer',
-                borderRadius: '5px',
-                fontSize: '16px'
-              }}
-            >
-              My Profile
-            </button>
-          </div>
-        </div>
+        <>
+          <h2>Welcome, {user?.firstName}!</h2>
+          <button onClick={() => navigate('/profile')} style={btnBlue}>My Profile</button>
+        </>
       ) : (
-        <div style={{ marginTop: '20px' }}>
-          <button 
-            onClick={() => navigate('/login')}
-            style={{
-              padding: '10px 20px',
-              marginRight: '10px',
-              backgroundColor: '#2196F3',
-              color: 'white',
-              border: 'none',
-              cursor: 'pointer',
-              borderRadius: '5px',
-              fontSize: '16px'
-            }}
-          >
-            Login
-          </button>
-          <button 
-            onClick={() => navigate('/register')}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: '#4CAF50',
-              color: 'white',
-              border: 'none',
-              cursor: 'pointer',
-              borderRadius: '5px',
-              fontSize: '16px'
-            }}
-          >
-            Register
-          </button>
-        </div>
+        <>
+          <button onClick={() => navigate('/login')} style={btnBlue}>Login</button>
+          <button onClick={() => navigate('/register')} style={btnGreen}>Register</button>
+        </>
       )}
     </div>
   );
+};
+
+const btnBlue = {
+  padding: '10px 20px',
+  margin: '10px',
+  backgroundColor: '#2196F3',
+  color: 'white',
+  border: 'none',
+  borderRadius: '5px',
+  cursor: 'pointer'
+};
+
+const btnGreen = {
+  ...btnBlue,
+  backgroundColor: '#4CAF50'
 };
 
 export default Home;

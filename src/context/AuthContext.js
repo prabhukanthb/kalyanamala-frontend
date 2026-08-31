@@ -1,101 +1,90 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useEffect, useState } from 'react';
 import { authService } from '../services/api';
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user,setUser] = useState(null);
-  const [token,setToken] = useState(localStorage.getItem('token'));
-  const [loading,setLoading] = useState(false);
-  const [error,setError] = useState(null);
+  const [token,setToken] = useState(localStorage.getItem('token') || '');
+  const [isAuthenticated,setIsAuthenticated] = useState(!!localStorage.getItem('token'));
+  const [loading,setLoading] = useState(true);
 
   useEffect(() => {
-    if (token) {
-      fetchCurrentUser();
-    }
-  }, [token]);
+    const loadCurrentUser = async () => {
+      const savedToken = localStorage.getItem('token');
 
-  const fetchCurrentUser = async () => {
-    try {
-      setLoading(true);
-      const response = await authService.getCurrentUser();
-      setUser(response.data.user);
-    } catch (err) {
-      console.error('Error fetching user:', err);
-      localStorage.removeItem('token');
-      setToken(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+      if (!savedToken) {
+        setLoading(false);
+        return;
+      }
 
-  const register = async (userData) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await authService.register(userData);
-      const { token, user } = response.data;
-      
-      localStorage.setItem('token', token);
-      setToken(token);
-      setUser(user);
-      
-      return response.data;
-    } catch (err) {
-      const errorMsg = err.response?.data?.error?.message || 'Registration failed';
-      setError(errorMsg);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
+      try {
+        const res = await authService.getCurrentUser();
+
+        setToken(savedToken);
+        setUser(res.data.user);
+        setIsAuthenticated(true);
+      } catch (error) {
+        console.error('Auth load error:', error);
+        localStorage.removeItem('token');
+        setToken('');
+        setUser(null);
+        setIsAuthenticated(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCurrentUser();
+  }, []);
 
   const login = async (emailOrPhone, password) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await authService.login({ emailOrPhone, password });
-      const { token, user } = response.data;
-      
-      localStorage.setItem('token', token);
-      setToken(token);
-      setUser(user);
-      
-      return response.data;
-    } catch (err) {
-      const errorMsg = err.response?.data?.error?.message || 'Login failed';
-      setError(errorMsg);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
+    const res = await authService.login({ emailOrPhone, password });
+
+    const { token: newToken, user: loggedInUser } = res.data;
+
+    localStorage.setItem('token', newToken);
+    setToken(newToken);
+    setUser(loggedInUser);
+    setIsAuthenticated(true);
+
+    return res.data;
+  };
+
+  const register = async (formData) => {
+    const res = await authService.register(formData);
+
+    const { token: newToken, user: registeredUser } = res.data;
+
+    localStorage.setItem('token', newToken);
+    setToken(newToken);
+    setUser(registeredUser);
+    setIsAuthenticated(true);
+
+    return res.data;
   };
 
   const logout = async () => {
-    try {
-      await authService.logout();
-    } catch (err) {
-      console.error('Logout error:', err);
-    } finally {
-      localStorage.removeItem('token');
-      setToken(null);
-      setUser(null);
-    }
-  };
-
-  const value = {
-    user,
-    token,
-    loading,
-    error,
-    register,
-    login,
-    logout,
-    isAuthenticated: !!token
+    localStorage.removeItem('token');
+    setToken('');
+    setUser(null);
+    setIsAuthenticated(false);
   };
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        isAuthenticated,
+        loading,
+        login,
+        register,
+        logout,
+        setUser,
+        setToken,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
