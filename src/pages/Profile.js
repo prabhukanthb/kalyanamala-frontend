@@ -141,6 +141,22 @@ const thumbStyle = {
   display: 'block'
 };
 
+const removeBtnStyle = {
+  position: 'absolute',
+  top: -8,
+  right: -8,
+  width: 24,
+  height: 24,
+  borderRadius: '50%',
+  border: 'none',
+  background: '#c00',
+  color: '#fff',
+  cursor: 'pointer',
+  lineHeight: '24px',
+  padding: 0,
+  fontSize: 15
+};
+
 function calculateAge(dob) {
   if (!dob) return null;
   const birth = new Date(dob);
@@ -157,6 +173,13 @@ function getMaxDOBFor18Plus() {
   return d.toISOString().split('T')[0];
 }
 
+// works whether a photo entry is a plain string or a subdocument
+function photoSrc(p) {
+  if (!p) return '';
+  if (typeof p === 'string') return p;
+  return p.url || p.imageUrl || p.secure_url || '';
+}
+
 const Profile = () => {
   const { token, user } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -169,7 +192,6 @@ const Profile = () => {
   const [mode,setMode] = useState('view');
   const [form,setForm] = useState(initialForm);
 
-  // ---- photos ----
   const [photos,setPhotos] = useState([]);
   const [uploading,setUploading] = useState(false);
   const [photoError,setPhotoError] = useState('');
@@ -251,7 +273,6 @@ const Profile = () => {
     setFieldErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
-  // ---- Cloudinary upload ----
   const handlePhotoSelect = async (e) => {
     const files = Array.from(e.target.files);
     e.target.value = null;
@@ -280,7 +301,7 @@ const Profile = () => {
 
     setUploading(true);
     try {
-      const urls = [];
+      const uploaded = [];
       for (const file of selected) {
         const fd = new FormData();
         fd.append('file', file);
@@ -295,9 +316,22 @@ const Profile = () => {
         if (!res.ok || !data.secure_url) {
           throw new Error(data?.error?.message || 'Upload failed');
         }
-        urls.push(data.secure_url);
+
+        uploaded.push({
+          url: data.secure_url,
+          publicId: data.public_id,
+          isPrimary: false
+        });
       }
-      setPhotos((prev) => [...prev,...urls]);
+
+      setPhotos((prev) => {
+        const next = [...prev,...uploaded];
+        const hasPrimary = next.some((p) => typeof p === 'object' && p.isPrimary);
+        if (!hasPrimary && next[0] && typeof next[0] === 'object') {
+          next[0] = { ...next[0], isPrimary: true };
+        }
+        return next;
+      });
     } catch (err) {
       setPhotoError(err.message || 'Photo upload failed. Please try again.');
     } finally {
@@ -305,8 +339,15 @@ const Profile = () => {
     }
   };
 
-  const removePhoto = (url) => {
-    setPhotos((prev) => prev.filter((p) => p !== url));
+  const removePhoto = (src) => {
+    setPhotos((prev) => {
+      const next = prev.filter((p) => photoSrc(p) !== src);
+      const hasPrimary = next.some((p) => typeof p === 'object' && p.isPrimary);
+      if (!hasPrimary && next[0] && typeof next[0] === 'object') {
+        next[0] = { ...next[0], isPrimary: true };
+      }
+      return next;
+    });
   };
 
   const mapServerErrors = (data) => {
@@ -358,7 +399,7 @@ const Profile = () => {
     setFieldErrors({});
 
     if (uploading) {
-      setError('Please wait for photo upload to finish.');
+      setError('Please wait for the photo upload to finish.');
       return;
     }
 
@@ -401,7 +442,11 @@ const Profile = () => {
       aboutMe: form.aboutMe,
       preferredMatch: form.preferredMatch,
       caste: 'Mala',
-      photos: photos
+      photos: photos.map((p) => (
+        typeof p === 'string'
+          ? { url: p }
+          : { url: photoSrc(p), publicId: p.publicId, isPrimary: !!p.isPrimary }
+      ))
     };
 
     setSaving(true);
@@ -489,8 +534,13 @@ const Profile = () => {
               <p>No photos uploaded.</p>
             ) : (
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                {photos.map((url) => (
-                  <img key={url} src={url} alt="profile" style={thumbStyle} />
+                {photos.map((p, i) => (
+                  <img
+                    key={photoSrc(p) || i}
+                    src={photoSrc(p)}
+                    alt="profile"
+                    style={thumbStyle}
+                  />
                 ))}
               </div>
             )}
@@ -568,33 +618,22 @@ const Profile = () => {
 
             {photos.length > 0 && (
               <div style={{ display: 'flex', gap: 12, marginTop: 14, flexWrap: 'wrap' }}>
-                {photos.map((url) => (
-                  <div key={url} style={{ position: 'relative' }}>
-                    <img src={url} alt="profile" style={thumbStyle} />
-                    <button
-                      type="button"
-                      onClick={() => removePhoto(url)}
-                      title="Remove photo"
-                      style={{
-                        position: 'absolute',
-                        top: -8,
-                        right: -8,
-                        width: 24,
-                        height: 24,
-                        borderRadius: '50%',
-                        border: 'none',
-                        background: '#c00',
-                        color: '#fff',
-                        cursor: 'pointer',
-                        lineHeight: '24px',
-                        padding: 0,
-                        fontSize: 15
-                      }}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
+                {photos.map((p, i) => {
+                  const src = photoSrc(p);
+                  return (
+                    <div key={src || i} style={{ position: 'relative' }}>
+                      <img src={src} alt="profile" style={thumbStyle} />
+                      <button
+                        type="button"
+                        onClick={() => removePhoto(src)}
+                        title="Remove photo"
+                        style={removeBtnStyle}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
