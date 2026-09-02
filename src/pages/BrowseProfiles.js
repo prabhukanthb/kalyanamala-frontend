@@ -84,6 +84,7 @@ const BrowseProfiles = () => {
     });
   }, [results,me,myAge,isAdmin]);
 
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return visible;
@@ -91,12 +92,14 @@ const BrowseProfiles = () => {
     return visible.filter((p) => {
       if (searchBy === 'id') {
         const id = String(p.profileId || '');
-        return id.slice(-6).toLowerCase().includes(q) || id.toLowerCase().includes(q);
+        return id.toLowerCase().includes(q);
       }
-      const name = `${p.firstName || p.user?.firstName || ''} ${p.lastName || p.user?.lastName || ''}`.toLowerCase();
-      return name.includes(q);
+      const name = `${p.firstName || p.userId?.firstName || ''} ${p.lastName || p.userId?.lastName || ''}`.toLowerCase();
+      const email = String(p.userId?.email || '').toLowerCase();
+      const phone = String(p.userId?.phone || '');
+      return name.includes(q) || (isAdmin && (email.includes(q) || phone.includes(q)));
     });
-  }, [visible,query,searchBy]);
+  }, [visible,query,searchBy,isAdmin]);
 
   if (loading) return <div style={{ padding: 40 }}>Loading profiles…</div>;
 
