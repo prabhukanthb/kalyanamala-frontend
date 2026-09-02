@@ -160,7 +160,17 @@ const BrowseProfiles = () => {
                 <div style={{ fontSize: 12, color: '#999', marginTop: 6 }}>
                   ID: {String(p.profileId || '').slice(-6)}
                 </div>
-
+ {isAdmin && (
+                  <div style={{
+                    marginTop: 8, padding: 8, background: '#f5f9ff',
+                    border: '1px solid #d6e6ff', borderRadius: 6, fontSize: 12, color: '#345'
+                  }}>
+                    <div><strong>Full ID:</strong> {p.profileId || '-'}</div>
+                    <div><strong>Email:</strong> {p.userId?.email || '-'}</div>
+                    <div><strong>Phone:</strong> {p.userId?.phone || '-'}</div>
+                    <div><strong>Status:</strong> {p.approvalStatus || '-'}</div>
+                  </div>
+                )}
                 {canDownload && (
                   <button style={{ ...ghostBtn, marginTop: 12, width: '100%' }} onClick={() => setSelected(p)}>
                     Download card
