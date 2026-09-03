@@ -28,7 +28,7 @@ const btn = { padding: '9px 18px', background: '#2196F3', color: '#fff', border:
 const ghostBtn = { ...btn, background: '#fff', color: '#2196F3', border: '1px solid #2196F3' };
 
 const BrowseProfiles = () => {
-  const { token, user } = useContext(AuthContext);
+    const { token, user, loading: authLoading } = useContext(AuthContext);
 
   const [me,setMe] = useState(null);
   const [results,setResults] = useState([]);
