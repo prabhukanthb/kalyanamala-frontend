@@ -32,7 +32,7 @@ const BrowseProfiles = () => {
 
   const [me,setMe] = useState(null);
   const [results,setResults] = useState([]);
-  const [loading,setLoading] = useState(true);
+  const [busy,setBusy] = useState(true);
   const [error,setError] = useState('');
   const [query,setQuery] = useState('');
   const [searchBy,setSearchBy] = useState('name');
@@ -59,11 +59,17 @@ const BrowseProfiles = () => {
       } catch (err) {
         setError(err.response?.data?.message || 'Failed to load profiles');
       } finally {
-        setLoading(false);
+        setBusy(false);
       }
     };
-    if (token) load();
-  }, [token,isAdmin]);
+
+    if (authLoading) return;        // wait for user to arrive
+    if (!token || !user) {
+      setBusy(false);
+      return;
+    }
+    load();
+  }, [token,user,authLoading,isAdmin]);
 
   // client-side guard mirroring the server rules
   const visible = useMemo(() => {
