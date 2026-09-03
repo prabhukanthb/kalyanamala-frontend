@@ -529,7 +529,7 @@ const Profile = () => {
     return <div style={{ padding: '40px' }}>Loading profile...</div>;
   }
 
- const name = `${p.firstName || p.userId?.firstName || ''} ${p.lastName || p.userId?.lastName || ''}`.trim();
+const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
   const getStyle = (fieldName) => (fieldErrors[fieldName] ? errorFieldStyle : inputStyle);
 
   const ordered = normalisePhotos(photos);
