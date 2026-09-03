@@ -44,7 +44,7 @@ const ProfileDownloadCard = ({ profile, onClose }) => {
   const cardRef = useRef(null);
   const [busy,setBusy] = useState(false);
 
-  const name = `${profile.firstName || profile.user?.firstName || ''} ${profile.lastName || profile.user?.lastName || ''}`.trim();
+  const name = `${profile.firstName || profile.userId?.firstName || ''} ${profile.lastName || profile.userId?.lastName || ''}`.trim();
   const img = primaryPhoto(profile.photos);
   const age = calcAge(profile.dateOfBirth);
 
