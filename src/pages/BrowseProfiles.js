@@ -107,7 +107,7 @@ const BrowseProfiles = () => {
     });
   }, [visible,query,searchBy,isAdmin]);
 
-  if (loading) return <div style={{ padding: 40 }}>Loading profiles…</div>;
+  if (authLoading || busy) return <div style={{ padding: 40 }}>Loading profiles…</div>;
 
   return (
     <div style={{ maxWidth: 1100, margin: '30px auto', padding: 20 }}>
@@ -148,7 +148,7 @@ const BrowseProfiles = () => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
         {filtered.map((p) => {
           const img = primaryPhoto(p.photos);
-          const name = `${p.firstName || p.user?.firstName || ''} ${p.lastName || p.user?.lastName || ''}`.trim();
+         const name = `${p.firstName || p.userId?.firstName || ''} ${p.lastName || p.userId?.lastName || ''}`.trim();
           return (
             <div key={p._id || p.profileId} style={{ ...box, padding: 0, overflow: 'hidden' }}>
               {img ? (
