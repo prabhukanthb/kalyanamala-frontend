@@ -59,6 +59,13 @@ const NavBar = () => {
               {user?.surname ? ` ${user.surname}` : ''}!
             </span>
 
+<Link
+              to="/browse"
+              style={{ color: 'white', marginRight: '15px', textDecoration: 'none' }}
+            >
+              Browse
+            </Link>
+                
             <Link
               to="/profile"
               style={{ color: 'white', marginRight: '15px', textDecoration: 'none' }}
