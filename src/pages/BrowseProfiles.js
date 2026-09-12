@@ -1,7 +1,8 @@
-import React, { useContext, useEffect, useMemo, useState } from 'react';
+mport React, { useContext, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import ProfileDownloadCard from '../components/ProfileDownloadCard';
+import ProfileViewModal from '../components/ProfileViewModal';
 
 const API_BASE = 'https://kalyanamala-backend-production.up.railway.app';
 
@@ -28,7 +29,7 @@ const btn = { padding: '9px 18px', background: '#2196F3', color: '#fff', border:
 const ghostBtn = { ...btn, background: '#fff', color: '#2196F3', border: '1px solid #2196F3' };
 
 const BrowseProfiles = () => {
-    const { token, user, loading: authLoading } = useContext(AuthContext);
+  const { token, user, loading: authLoading } = useContext(AuthContext);
 
   const [me,setMe] = useState(null);
   const [results,setResults] = useState([]);
@@ -36,7 +37,8 @@ const BrowseProfiles = () => {
   const [error,setError] = useState('');
   const [query,setQuery] = useState('');
   const [searchBy,setSearchBy] = useState('name');
-  const [selected,setSelected] = useState(null);
+  const [selected,setSelected] = useState(null);   // download modal
+  const [viewing,setViewing] = useState(null);     // view modal
 
   const role = user?.role || (user?.isAdmin ? 'admin' : 'member');
   const isAdmin = role === 'admin' || role === 'subadmin';
@@ -63,7 +65,7 @@ const BrowseProfiles = () => {
       }
     };
 
-    if (authLoading) return;        // wait for user to arrive
+    if (authLoading) return;
     if (!token || !user) {
       setBusy(false);
       return;
@@ -71,7 +73,7 @@ const BrowseProfiles = () => {
     load();
   }, [token,user,authLoading,isAdmin]);
 
-  // client-side guard mirroring the server rules
+  // client-side mirror of the server rules
   const visible = useMemo(() => {
     if (isAdmin) return results;
     if (!me || !myAge) return [];
@@ -80,16 +82,11 @@ const BrowseProfiles = () => {
       const a = calcAge(p.dateOfBirth);
       if (!a) return false;
 
-      if (me.gender === 'female') {
-        return p.gender === 'male' && a > myAge;
-      }
-      if (me.gender === 'male') {
-        return p.gender === 'female' && a <= myAge;
-      }
+      if (me.gender === 'female') return p.gender === 'male' && a > myAge;
+      if (me.gender === 'male') return p.gender === 'female' && a <= myAge;
       return false;
     });
   }, [results,me,myAge,isAdmin]);
-
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -130,13 +127,13 @@ const BrowseProfiles = () => {
       <div style={{ ...box, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
         {isAdmin && (
           <select value={searchBy} onChange={(e) => setSearchBy(e.target.value)} style={input}>
-            <option value="name">Search by Name</option>
-            <option value="id">Search by Profile ID (last 6)</option>
+            <option value="name">Search by Name / Email / Phone</option>
+            <option value="id">Search by Profile ID</option>
           </select>
         )}
         <input
           style={{ ...input, flex: 1, minWidth: 220 }}
-          placeholder={searchBy === 'id' ? 'Last 6 digits of profile ID' : 'Name'}
+          placeholder={searchBy === 'id' ? 'Profile ID (or last 6 digits)' : 'Name'}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
@@ -148,28 +145,45 @@ const BrowseProfiles = () => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
         {filtered.map((p) => {
           const img = primaryPhoto(p.photos);
-         const name = `${p.firstName || p.userId?.firstName || ''} ${p.lastName || p.userId?.lastName || ''}`.trim();
+          const name = `${p.firstName || p.userId?.firstName || ''} ${p.lastName || p.userId?.lastName || ''}`.trim();
+
           return (
             <div key={p._id || p.profileId} style={{ ...box, padding: 0, overflow: 'hidden' }}>
               {img ? (
-                <img src={img} alt={name} style={{ width: '100%', height: 220, objectFit: 'cover', display: 'block' }} />
+                <img
+                  src={img}
+                  alt={name}
+                  onClick={() => setViewing(p)}
+                  style={{ width: '100%', height: 220, objectFit: 'cover', display: 'block', cursor: 'pointer' }}
+                />
               ) : (
-                <div style={{ height: 220, background: '#f2f2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#aaa' }}>
+                <div
+                  onClick={() => setViewing(p)}
+                  style={{
+                    height: 220, background: '#f2f2f2', display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', color: '#aaa', cursor: 'pointer'
+                  }}
+                >
                   No photo
                 </div>
               )}
+
               <div style={{ padding: 14 }}>
                 <div style={{ fontWeight: 600, fontSize: 16 }}>{name || 'Member'}</div>
+
                 <div style={{ fontSize: 13, color: '#666', marginTop: 4 }}>
                   {calcAge(p.dateOfBirth)} yrs · {p.heightFeet}′{p.heightInches || 0}″
                 </div>
+
                 <div style={{ fontSize: 13, color: '#666' }}>
                   {p.occupation} · {p.currentAddress?.city}
                 </div>
+
                 <div style={{ fontSize: 12, color: '#999', marginTop: 6 }}>
                   ID: {String(p.profileId || '').slice(-6)}
                 </div>
- {isAdmin && (
+
+                {isAdmin && (
                   <div style={{
                     marginTop: 8, padding: 8, background: '#f5f9ff',
                     border: '1px solid #d6e6ff', borderRadius: 6, fontSize: 12, color: '#345'
@@ -180,8 +194,21 @@ const BrowseProfiles = () => {
                     <div><strong>Status:</strong> {p.approvalStatus || '-'}</div>
                   </div>
                 )}
+
+                {/* View — everyone */}
+                <button
+                  style={{ ...btn, marginTop: 12, width: '100%' }}
+                  onClick={() => setViewing(p)}
+                >
+                  View profile
+                </button>
+
+                {/* Download — admin / subadmin / premium */}
                 {canDownload && (
-                  <button style={{ ...ghostBtn, marginTop: 12, width: '100%' }} onClick={() => setSelected(p)}>
+                  <button
+                    style={{ ...ghostBtn, marginTop: 8, width: '100%' }}
+                    onClick={() => setSelected(p)}
+                  >
                     Download card
                   </button>
                 )}
@@ -191,8 +218,19 @@ const BrowseProfiles = () => {
         })}
       </div>
 
+      {viewing && (
+        <ProfileViewModal
+          profile={viewing}
+          isAdmin={isAdmin}
+          onClose={() => setViewing(null)}
+        />
+      )}
+
       {selected && (
-        <ProfileDownloadCard profile={selected} onClose={() => setSelected(null)} />
+        <ProfileDownloadCard
+          profile={selected}
+          onClose={() => setSelected(null)}
+        />
       )}
     </div>
   );
