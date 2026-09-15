@@ -1,5 +1,7 @@
 import React from 'react';
 
+const API_BASE = 'https://kalyanamala-backend-production.up.railway.app';
+
 const photoSrc = (p) => (!p ? '' : typeof p === 'string' ? p : p.url || p.imageUrl || '');
 
 const calcAge = (dob) => {
@@ -26,11 +28,71 @@ const H = ({ children }) => (
   }}>{children}</h4>
 );
 
+const fieldLabels = {
+  firstName: 'First Name',
+  lastName: 'Last Name',
+  surname: 'Surname',
+  email: 'Email',
+  phone: 'Phone'
+};
+
 const ProfileViewModal = ({ profile, isAdmin, onClose }) => {
   const [active,setActive] = React.useState(0);
+
+  const [editing,setEditing] = React.useState(false);
+  const [savingAcct,setSavingAcct] = React.useState(false);
+  const [acctMsg,setAcctMsg] = React.useState('');
+  const [acctOk,setAcctOk] = React.useState(false);
+
+  const [acct,setAcct] = React.useState({
+    firstName: profile.userId?.firstName || '',
+    lastName: profile.userId?.lastName || '',
+    surname: profile.userId?.surname || '',
+    email: profile.userId?.email || '',
+    phone: profile.userId?.phone || ''
+  });
+
   const photos = profile.photos || [];
-  const name = `${profile.firstName || profile.userId?.firstName || ''} ${profile.lastName || profile.userId?.lastName || ''}`.trim();
   const age = calcAge(profile.dateOfBirth);
+
+  const name = editing || acctOk
+    ? `${acct.firstName} ${acct.lastName}`.trim()
+    : `${profile.firstName || profile.userId?.firstName || ''} ${profile.lastName || profile.userId?.lastName || ''}`.trim();
+
+  const saveAccount = async () => {
+    setSavingAcct(true);
+    setAcctMsg('');
+    setAcctOk(false);
+
+    try {
+      const token = localStorage.getItem('token');
+      const userId = profile.userId?._id || profile.userId;
+
+      const res = await fetch(`${API_BASE}/api/admin/users/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(acct)
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || data.error || 'Update failed');
+      }
+
+      setAcctMsg('Account details saved.');
+      setAcctOk(true);
+      setEditing(false);
+    } catch (e) {
+      setAcctMsg(e.message);
+      setAcctOk(false);
+    } finally {
+      setSavingAcct(false);
+    }
+  };
 
   return (
     <div
@@ -68,7 +130,7 @@ const ProfileViewModal = ({ profile, isAdmin, onClose }) => {
                 {photos.length > 1 && (
                   <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                     {photos.map((p, i) => (
-                      <img key={i} src={photoSrc(p)} alt={`t${i}`} onClick={() => setActive(i)}
+                      <img key={i} src={photoSrc(p)} alt={`thumb ${i + 1}`} onClick={() => setActive(i)}
                         style={{
                           width: 60, height: 60, objectFit: 'cover', borderRadius: 6, cursor: 'pointer',
                           border: i === active ? '3px solid #2196F3' : '1px solid #ddd'
@@ -89,10 +151,73 @@ const ProfileViewModal = ({ profile, isAdmin, onClose }) => {
             {isAdmin && (
               <>
                 <H>Account (admin only)</H>
-                <R label="Profile ID" value={profile.profileId} />
-                <R label="Email" value={profile.userId?.email} />
-                <R label="Phone" value={profile.userId?.phone} />
-                <R label="Status" value={profile.approvalStatus} />
+
+                {!editing ? (
+                  <>
+                    <R label="Profile ID" value={profile.profileId} />
+                    <R label="First Name" value={acct.firstName} />
+                    <R label="Last Name" value={acct.lastName} />
+                    <R label="Surname" value={acct.surname} />
+                    <R label="Email" value={acct.email} />
+                    <R label="Phone" value={acct.phone} />
+                    <R label="Status" value={profile.approvalStatus} />
+
+                    <button
+                      onClick={() => { setEditing(true); setAcctMsg(''); }}
+                      style={{
+                        marginTop: 10, padding: '7px 14px', border: '1px solid #2196F3',
+                        background: '#fff', color: '#2196F3', borderRadius: 5, cursor: 'pointer'
+                      }}
+                    >
+                      Edit account details
+                    </button>
+                  </>
+                ) : (
+                  <div style={{ background: '#f5f9ff', padding: 14, borderRadius: 8, border: '1px solid #d6e6ff' }}>
+                    {Object.keys(fieldLabels).map((f) => (
+                      <div key={f} style={{ marginBottom: 10 }}>
+                        <label style={{ fontSize: 12, color: '#666', display: 'block', marginBottom: 3 }}>
+                          {fieldLabels[f]}
+                        </label>
+                        <input
+                          value={acct[f]}
+                          onChange={(e) => setAcct({ ...acct, [f]: e.target.value })}
+                          style={{
+                            width: '100%', padding: 8, border: '1px solid #ccc',
+                            borderRadius: 5, boxSizing: 'border-box'
+                          }}
+                        />
+                      </div>
+                    ))}
+
+                    <button
+                      onClick={saveAccount}
+                      disabled={savingAcct}
+                      style={{
+                        padding: '8px 16px', background: savingAcct ? '#999' : '#2196F3', color: '#fff',
+                        border: 'none', borderRadius: 5, cursor: savingAcct ? 'not-allowed' : 'pointer', marginRight: 8
+                      }}
+                    >
+                      {savingAcct ? 'Saving…' : 'Save'}
+                    </button>
+
+                    <button
+                      onClick={() => { setEditing(false); setAcctMsg(''); }}
+                      style={{
+                        padding: '8px 16px', background: '#fff', border: '1px solid #999',
+                        borderRadius: 5, cursor: 'pointer'
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+
+                {acctMsg && (
+                  <div style={{ marginTop: 10, fontSize: 13, color: acctOk ? '#1b7a3d' : '#c00' }}>
+                    {acctMsg}
+                  </div>
+                )}
               </>
             )}
 
