@@ -12,7 +12,7 @@
   "terminals": [
     {
       "name": "backend-api",
-      "command": "cd ../kalyanamala-backend && npm start",
+      "command": "cd ../kalyanamala-backend 2>/dev/null || cd /agent/repos/kalyanamala-backend; npm start",
       "description": "Express API server on http://localhost:5000 (connects to local MongoDB)"
     },
     {

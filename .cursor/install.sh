@@ -8,7 +8,20 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FRONTEND_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 REPOS_DIR="$(cd "$FRONTEND_DIR/.." && pwd)"
-BACKEND_DIR="$REPOS_DIR/kalyanamala-backend"
+
+# Locate the backend repo. Cloud Agents check out sibling repos next to the
+# frontend (e.g. /agent/repos/kalyanamala-backend), but a single-repo checkout
+# can live at /workspace, so probe a few known locations.
+BACKEND_DIR=""
+for candidate in \
+  "$REPOS_DIR/kalyanamala-backend" \
+  "/agent/repos/kalyanamala-backend" \
+  "$FRONTEND_DIR/../kalyanamala-backend"; do
+  if [ -d "$candidate" ]; then
+    BACKEND_DIR="$(cd "$candidate" && pwd)"
+    break
+  fi
+done
 
 # 1. Ensure MongoDB Community Server is installed (stable system dependency).
 if ! command -v mongod >/dev/null 2>&1; then
@@ -28,7 +41,7 @@ sudo mkdir -p /var/lib/mongodb /var/log/mongodb
 sudo chown -R mongodb:mongodb /var/lib/mongodb /var/log/mongodb
 
 # 3. Backend dependencies + local dev env file.
-if [ -d "$BACKEND_DIR" ]; then
+if [ -n "$BACKEND_DIR" ] && [ -d "$BACKEND_DIR" ]; then
   echo "Installing backend dependencies..."
   ( cd "$BACKEND_DIR" && npm install )
   if [ ! -f "$BACKEND_DIR/.env" ]; then
