@@ -1,0 +1,24 @@
+{
+  "name": "Kalyanamala Matrimony (frontend + backend + MongoDB)",
+  "repositoryDependencies": [
+    "github.com/prabhukanthb/kalyanamala-backend"
+  ],
+  "install": "bash ./.cursor/install.sh",
+  "start": "bash ./.cursor/start.sh",
+  "ports": [
+    { "name": "frontend", "port": 3000 },
+    { "name": "backend", "port": 5000 }
+  ],
+  "terminals": [
+    {
+      "name": "backend-api",
+      "command": "cd ../kalyanamala-backend && npm start",
+      "description": "Express API server on http://localhost:5000 (connects to local MongoDB)"
+    },
+    {
+      "name": "frontend-web",
+      "command": "BROWSER=none npm start",
+      "description": "React (Create React App) dev server on http://localhost:3000"
+    }
+  ]
+}
